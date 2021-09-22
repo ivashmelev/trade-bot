@@ -1,5 +1,4 @@
 import express from 'express';
-import binance from './api/binance';
 import './env';
 import { Trade } from './trade/trade';
 import { SymbolOrder } from './trade/types';
