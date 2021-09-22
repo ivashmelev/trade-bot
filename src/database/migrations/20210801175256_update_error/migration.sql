@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Error" ALTER COLUMN "message" DROP NOT NULL,
+ALTER COLUMN "url" DROP NOT NULL;

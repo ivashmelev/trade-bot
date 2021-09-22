@@ -1,0 +1,53 @@
+{
+  "name": "tbot",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/main.ts",
+    "dev": "ts-node-dev  src/main.ts --development --trace-warnings",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "db-generate": "prisma generate --schema ./src/database/schema.prisma",
+    "db-migrate": "prisma migrate dev --schema ./src/database/schema.prisma",
+    "db-seed": "prisma db seed --preview-feature --schema ./src/database/schema.prisma",
+    "npx": "npx",
+    "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\""
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/jest": "^26.0.24",
+    "@types/node": "^16.6.1",
+    "@types/ws": "^7.4.5",
+    "@typescript-eslint/eslint-plugin": "^4.24.0",
+    "@typescript-eslint/parser": "^4.24.0",
+    "eslint": "^7.26.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.23.2",
+    "eslint-plugin-prettier": "^3.4.0",
+    "prettier": "^2.3.0",
+    "ts-jest": "^27.0.5",
+    "ts-node-dev": "^1.1.6",
+    "typescript": "^4.2.4"
+  },
+  "dependencies": {
+    "@hapi/sntp": "^4.0.0",
+    "@prisma/client": "^2.28.0",
+    "axios": "^0.21.1",
+    "binance-api-node": "^0.10.47",
+    "chalk": "^4.1.1",
+    "coinbase-pro-node": "^3.0.5",
+    "dotenv": "^9.0.2",
+    "express": "^4.17.1",
+    "hash.js": "^1.1.7",
+    "interval-promise": "^1.4.0",
+    "jest": "^27.0.6",
+    "moment": "^2.29.1",
+    "npx": "^10.2.2",
+    "prisma": "^2.28.0",
+    "reconnecting-websocket": "^4.4.0",
+    "ts-node": "^9.1.1",
+    "ws": "^7.5.0"
+  }
+}
