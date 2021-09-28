@@ -4,6 +4,7 @@ import crypto from 'crypto';
 const makeQueryString = (q: any): string =>
   q
     ? `?${Object.keys(q)
+        .filter((k) => q[k])
         .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(q[k])}`)
         .join('&')}`
     : '';
