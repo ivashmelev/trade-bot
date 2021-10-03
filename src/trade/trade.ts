@@ -18,6 +18,16 @@ import {
 } from './types';
 import { calcValueByPercentage } from './utils';
 
+/**
+ * TODO
+ * 1. Сохранять ids ордеров
+ * 2. Реализовать функционал стоп лосса
+ * 3. Обновить вебсокет согласно новой стратегии
+ *
+ * BUGS
+ * 1. The relationship of the prices for the orders is not correct.
+ */
+
 export class Trade {
   private threshold: Threshold;
   private limitThreshold: number;
@@ -25,8 +35,9 @@ export class Trade {
   private deposit: number;
   private marketPrice: number | null;
   private activeOcoId: number | null;
+  private symbol: Symbol;
 
-  constructor() {
+  constructor(symbol: Symbol) {
     this.threshold = {
       buy: {
         takeProfit: -0.2,
@@ -42,6 +53,7 @@ export class Trade {
     this.deposit = 100;
     this.marketPrice = null;
     this.activeOcoId = null;
+    this.symbol = symbol;
   }
 
   async getAccountInfo(assets?: string[]): Promise<AccountInfo> {
@@ -96,16 +108,23 @@ export class Trade {
 
   async getMarketPrice(): Promise<number> {
     try {
-      const response = await axios.get<CoincapRate>('https://api.coincap.io/v2/rates/bitcoin');
+      const response = await binanceRestPublic.get<{
+        symbol: Symbol;
+        price: string;
+      }>('/ticker/price', { params: { symbol: this.symbol } });
 
-      return Number(response.data.data.rateUsd);
-    } catch (e) {
-      const error = e as AxiosError;
-      console.log(error.code, error.message, error.request.path);
+      return Number(response.data.price);
+    } catch (error) {
+      console.log(
+        error.config.url,
+        error.config.method,
+        error.response.statusText,
+        JSON.stringify(error.response.data)
+      );
     }
   }
 
-  async createOco(symbol: Symbol): Promise<{ orderListId: number }> {
+  async createOco(): Promise<{ orderListId: number }> {
     if (this.marketPrice === null) {
       this.marketPrice = await this.getMarketPrice();
     }
@@ -113,7 +132,7 @@ export class Trade {
     try {
       const response = await binanceRestPrivate.post<{ orderListId: number }>('/order/oco', null, {
         params: {
-          symbol,
+          symbol: this.symbol,
           side: this.side,
           quantity: this.quantity,
           price: this.price.toFixed(2),
@@ -124,29 +143,23 @@ export class Trade {
       });
 
       return response.data;
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   }
 
-  async cancelOrders(symbol: Symbol, id?: number) {
+  async cancelOrders(id?: number) {
     try {
       const response = await binanceRestPrivate.delete('/openOrders', {
-        params: { symbol } as CancelOcoParams,
+        params: { symbol: this.symbol } as CancelOcoParams,
       });
       return response.data;
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   }
 
-  async getOpenOrders(symbol: Symbol) {
+  async getOpenOrders() {
     try {
-      const response = await binanceRestPrivate.get('/openOrders', { params: { symbol } });
+      const response = await binanceRestPrivate.get('/openOrders', { params: { symbol: this.symbol } });
       return response.data;
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   }
 
   listenOrderStream() {
@@ -174,14 +187,15 @@ export class Trade {
             }
 
             this.side = this.side === Side.Buy ? Side.Sell : Side.Buy;
-            this.marketPrice = Number(payload.L);
+            this.marketPrice = null;
 
-            this.createOco(Symbol.Btcusdt);
+            this.createOco();
 
             break;
           }
         }
       }
+      console.log(`deposit - ${this.deposit}`);
     });
   }
 
@@ -189,7 +203,7 @@ export class Trade {
     this.listenOrderStream();
 
     binanceWebsocket.addEventListener('open', () => {
-      this.createOco(Symbol.Btcusdt);
+      this.createOco();
     });
 
     binanceWebsocket.addEventListener('error', (e) => {

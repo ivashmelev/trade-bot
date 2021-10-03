@@ -41,6 +41,7 @@ export enum Event {
   ExecutionReport = 'executionReport',
   BalanceUpdate = 'balanceUpdate',
   OutboundAccountPosition = 'outboundAccountPosition',
+  ListStatus = 'listStatus',
 }
 
 export enum OrderType {
@@ -148,7 +149,32 @@ interface ExecutionReportEvent {
   Q: string; // Quote Order Qty
 }
 
-export type Payload = OutboundAccountPositionEvent | BalanceUpdateEvent | ExecutionReportEvent;
+enum ListStatusType {
+  Response = 'RESPONSE',
+  ExecStarted = 'EXEC_STARTED',
+  AllDone = 'ALL_DONE',
+}
+
+enum ListOrderStatus {
+  Executing = 'EXECUTING',
+  AllDone = 'ALL_DONE',
+  Reject = 'REJECT',
+}
+interface ListStatus {
+  e: Event.ListStatus;
+  E: number;
+  s: Symbol;
+  g: number;
+  c: 'OCO';
+  l: ListStatusType;
+  L: ListOrderStatus;
+  r: 'NONE';
+  C: string;
+  T: number;
+  O: { s: Symbol; i: number; c: string }[];
+}
+
+export type Payload = OutboundAccountPositionEvent | BalanceUpdateEvent | ExecutionReportEvent | ListStatus;
 
 enum OrderResponse {
   Ack = 'ACK',

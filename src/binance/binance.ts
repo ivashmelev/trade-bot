@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { getSignature } from './utils';
 import WebSocket from 'ws';
@@ -30,6 +30,18 @@ export const initBinanceRest = async () => {
       return config;
     });
 
+    binanceRestPrivate.interceptors.response.use(undefined, (error: AxiosError) => {
+      console.log(
+        error.config.url,
+        error.config.method,
+        error.response.statusText,
+        JSON.stringify(error.response.data, null, 2),
+        JSON.stringify(error.config.params, null, 2)
+      );
+
+      return Promise.reject(error);
+    });
+
     binanceRestPublic = axios.create({
       baseURL: url,
       headers: {
@@ -51,7 +63,7 @@ export const initBinanceWebsocket = async () => {
     });
 
     setInterval(() => {
-      binanceRestPublic.put('/userDataStream');
+      binanceRestPublic.put('/userDataStream', null, { params: { listenKey } });
     }, 30 * 60000);
   } catch (error) {
     console.log(error);

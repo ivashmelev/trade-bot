@@ -6,13 +6,12 @@ import { Symbol } from './trade/types';
 
 const app = express();
 const port = 5000;
-const trade = new Trade();
+const trade = new Trade(Symbol.Btcusdt);
 
 app.get('/balance', async (req, res) => {
   try {
     res.send((await trade.getAccountInfo(['BTC', 'USDT'])).balances);
   } catch (error) {
-    console.log(error);
     res.send(error);
   }
 });
@@ -22,15 +21,15 @@ app.get('/price', async (req, res) => {
 });
 
 app.get('/oco', async (req, res) => {
-  res.send((await trade.createOco(Symbol.Btcusdt)).orderListId.toString());
+  res.send((await trade.createOco()).orderListId.toString());
 });
 
 app.get('/cancel', async (req, res) => {
-  res.send(await trade.cancelOrders(Symbol.Btcusdt));
+  res.send(await trade.cancelOrders());
 });
 
 app.get('/openOrders', async (req, res) => {
-  res.send(await trade.getOpenOrders(Symbol.Btcusdt));
+  res.send(await trade.getOpenOrders());
 });
 
 app.listen(port, async () => {
