@@ -176,7 +176,7 @@ interface ListStatus {
 
 export type Payload = OutboundAccountPositionEvent | BalanceUpdateEvent | ExecutionReportEvent | ListStatus;
 
-enum OrderResponse {
+export enum OrderResponse {
   Ack = 'ACK',
   Result = 'RESULT',
   Full = 'FULL',
@@ -196,6 +196,16 @@ export interface OcoParams {
   stopIcebergQty?: string;
   stopLimitTimeInForce?: TimeInForce; //	Valid values are GTC/FOK/IOC
   newOrderRespType?: OrderResponse; //	Set the response JSON.
+}
+
+export interface OrderParams {
+  symbol: Symbol;
+  type: OrderType;
+  stopPrice: string;
+  side: Side;
+  quantity: string;
+  price: string;
+  newOrderRespType: OrderResponse;
 }
 
 export interface CoincapRate {

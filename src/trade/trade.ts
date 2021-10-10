@@ -8,6 +8,7 @@ import {
   CoincapRate,
   Event,
   OcoParams,
+  OrderResponse,
   OrderStatus,
   OrderType,
   Payload,
@@ -26,6 +27,7 @@ import { calcValueByPercentage } from './utils';
  *
  * BUGS
  * 1. The relationship of the prices for the orders is not correct.
+ * 2. Обнуляются ордера без какой либо причины (TimeInForce.Gtc)
  */
 
 export class Trade {
@@ -72,33 +74,19 @@ export class Trade {
   }
 
   private get price(): number {
-    if (this.side === Side.Buy) {
-      return calcValueByPercentage(this.marketPrice, this.threshold.buy.takeProfit);
-    }
-
-    if (this.side === Side.Sell) {
-      return calcValueByPercentage(this.marketPrice, this.threshold.sell.takeProfit);
-    }
+    return calcValueByPercentage(this.marketPrice, this.threshold[this.side.toLowerCase()].takeProfit);
   }
 
   private get stopPrice(): number {
-    if (this.side === Side.Buy) {
-      return calcValueByPercentage(this.marketPrice, this.threshold.buy.stopLoss);
-    }
-
-    if (this.side === Side.Sell) {
-      return calcValueByPercentage(this.marketPrice, this.threshold.sell.stopLoss);
-    }
+    return calcValueByPercentage(this.marketPrice, this.threshold[this.side.toLowerCase()].stopLoss);
   }
 
   private get stopLimitPrice(): number {
-    if (this.side === Side.Buy) {
-      return calcValueByPercentage(this.stopPrice, -this.limitThreshold);
-    }
+    const percentageStopLoss = this.threshold[this.side.toLowerCase()].stopLoss;
+    const absPercentageWithLimit = Math.abs(percentageStopLoss) + this.limitThreshold;
+    const percentageWithLimit = Math.sign(percentageStopLoss) === 1 ? absPercentageWithLimit : -absPercentageWithLimit;
 
-    if (this.side === Side.Sell) {
-      return calcValueByPercentage(this.stopPrice, this.limitThreshold);
-    }
+    return calcValueByPercentage(this.marketPrice, percentageWithLimit);
   }
 
   private get quantity(): string {
@@ -140,6 +128,42 @@ export class Trade {
           stopLimitPrice: this.stopLimitPrice.toFixed(2),
           stopLimitTimeInForce: TimeInForce.Gtc,
         } as OcoParams,
+      });
+
+      console.log(response.data);
+
+      return response.data;
+    } catch (error) {}
+  }
+
+  async createOrder() {
+    if (this.marketPrice === null) {
+      this.marketPrice = await this.getMarketPrice();
+    }
+
+    try {
+      const response = await binanceRestPrivate.post('/order', null, {
+        params: {
+          symbol: this.symbol,
+          side: this.side,
+          quantity: this.quantity,
+          price: this.price.toFixed(2),
+          stopPrice: this.stopPrice.toFixed(2),
+          stopLimitPrice: this.stopLimitPrice.toFixed(2),
+          newOrderRespType: OrderResponse.Result,
+        },
+      });
+
+      console.log(response.data);
+
+      return response.data;
+    } catch (error) {}
+  }
+
+  async cancelOrder(id: number) {
+    try {
+      const response = await binanceRestPrivate.delete('/order', {
+        params: { symbol: this.symbol, orderId: id },
       });
 
       return response.data;
@@ -203,7 +227,7 @@ export class Trade {
     this.listenOrderStream();
 
     binanceWebsocket.addEventListener('open', () => {
-      this.createOco();
+      // this.createOco();
     });
 
     binanceWebsocket.addEventListener('error', (e) => {

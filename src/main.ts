@@ -21,11 +21,15 @@ app.get('/price', async (req, res) => {
 });
 
 app.get('/oco', async (req, res) => {
-  res.send((await trade.createOco()).orderListId.toString());
+  res.send(await trade.createOco());
 });
 
-app.get('/cancel', async (req, res) => {
+app.get('/cancelAll', async (req, res) => {
   res.send(await trade.cancelOrders());
+});
+
+app.get('/cancelOne', async (req, res) => {
+  res.send(await trade.cancelOrder(Number(req.query.id)));
 });
 
 app.get('/openOrders', async (req, res) => {
