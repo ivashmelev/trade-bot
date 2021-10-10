@@ -71,33 +71,33 @@ export class Trade {
     }
   }
 
-  private get price(): number {
-    if (this.side === Side.Buy) {
-      return calcValueByPercentage(this.marketPrice, this.threshold.buy.takeProfit);
-    }
+  private getPrice(side: Side, marketPrice: number, orderType: OrderType): number {
+    if (orderType === OrderType.TakeProfitLimit) {
+      if (side === Side.Buy) {
+        return calcValueByPercentage(this.marketPrice, this.threshold.buy.takeProfit);
+      }
 
-    if (this.side === Side.Sell) {
-      return calcValueByPercentage(this.marketPrice, this.threshold.sell.takeProfit);
+      if (side === Side.Sell) {
+        return calcValueByPercentage(this.marketPrice, this.threshold.sell.takeProfit);
+      }
+    } else if (orderType === OrderType.StopLossLimit) {
+      if (side === Side.Buy) {
+        return calcValueByPercentage(marketPrice, this.threshold.buy.stopLoss);
+      }
+
+      if (side === Side.Sell) {
+        return calcValueByPercentage(marketPrice, this.threshold.sell.stopLoss);
+      }
     }
   }
 
-  private get stopPrice(): number {
-    if (this.side === Side.Buy) {
-      return calcValueByPercentage(this.marketPrice, this.threshold.buy.stopLoss);
+  private getLimitPrice(side: Side, price: number, limitThreshold: number): number {
+    if (side === Side.Buy) {
+      return calcValueByPercentage(price, -limitThreshold);
     }
 
-    if (this.side === Side.Sell) {
-      return calcValueByPercentage(this.marketPrice, this.threshold.sell.stopLoss);
-    }
-  }
-
-  private get stopLimitPrice(): number {
-    if (this.side === Side.Buy) {
-      return calcValueByPercentage(this.stopPrice, -this.limitThreshold);
-    }
-
-    if (this.side === Side.Sell) {
-      return calcValueByPercentage(this.stopPrice, this.limitThreshold);
+    if (side === Side.Sell) {
+      return calcValueByPercentage(price, limitThreshold);
     }
   }
 
@@ -129,15 +129,17 @@ export class Trade {
       this.marketPrice = await this.getMarketPrice();
     }
 
+    const stopPrice = this.getPrice(this.side, this.marketPrice, OrderType.StopLossLimit);
+
     try {
       const response = await binanceRestPrivate.post<{ orderListId: number }>('/order/oco', null, {
         params: {
           symbol: this.symbol,
           side: this.side,
           quantity: this.quantity,
-          price: this.price.toFixed(2),
-          stopPrice: this.stopPrice.toFixed(2),
-          stopLimitPrice: this.stopLimitPrice.toFixed(2),
+          price: this.getPrice(this.side, this.marketPrice, OrderType.TakeProfitLimit).toFixed(2),
+          stopPrice: stopPrice.toFixed(2),
+          stopLimitPrice: this.getLimitPrice(this.side, stopPrice, this.limitThreshold).toFixed(2),
           stopLimitTimeInForce: TimeInForce.Gtc,
         } as OcoParams,
       });
