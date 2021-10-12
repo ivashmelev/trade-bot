@@ -1,10 +1,10 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   url      = "postgresql://user:pass@localhost:5432/db"
   provider = "postgresql"
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model User {
@@ -13,20 +13,16 @@ model User {
   name       String
 }
 
-model StopLossOrder {
-  id       Int    @id @default(autoincrement())
-  quantity String
-  price    String
-}
-
-model Log {
-  id       Int     @id @default(autoincrement())
-  time     Int
-  side     String
-  price    String
-  quantity String
-  usd      String
-  isProfit Boolean
+model Order {
+  id            Int      @id @default(autoincrement())
+  time          DateTime
+  type          String
+  price         String
+  stopPrice     String
+  quantity      String
+  quoteQuantity String
+  side          String
+  symbol        String
 }
 
 model Error {
@@ -34,4 +30,10 @@ model Error {
   time    Int
   message String?
   url     String?
+}
+
+model StopLossOrder {
+  id       Int    @id @default(autoincrement())
+  price    String
+  quantity String
 }

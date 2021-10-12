@@ -79,74 +79,52 @@ export enum TimeInForce {
   Fok = 'FOK',
 }
 
-interface OutboundAccountPositionEvent {
-  e: Event.OutboundAccountPosition;
-  E: number; //Event Time
-  u: number; //Time of last account update
-  B: //Balances Array
-  {
-    a: string; //Asset
-    f: string; //Free
-    l: string; //Locked
-  }[];
+export interface OutboundAccountPositionEvent {
+  balances: Balance[];
+  eventTime: number;
+  eventType: Event.OutboundAccountPosition;
+  lastAccountUpdate: number;
 }
 
-interface BalanceUpdateEvent {
-  e: Event.BalanceUpdate;
-  E: number; //Event Time
-  a: string; //Asset
-  d: string; //Balance Delta
-  T: number; //Clear Time
+export interface BalanceUpdateEvent {
+  asset: string;
+  balanceDelta: string;
+  clearTime: number;
+  eventTime: number;
+  eventType: Event.BalanceUpdate;
 }
 
-interface ExecutionReportEvent {
-  e: Event.ExecutionReport;
-  /**
-   * Event time
-   */
-  E: number;
-  /**
-   * Symbol
-   */
-  s: Symbol; //
-  /**
-   * Client order ID
-   */
-  c: string; //
-  /**
-   * Side
-   */
-  S: Side; //
-  /**
-   * Order type
-   */
-  o: OrderType; //
-  f: TimeInForce; // Time in force
-  q: string; // Order quantity
-  p: string; // Order price
-  P: string; // Stop price
-  F: string; // Iceberg quantity
-  g: number; // OrderListId
-  C: string; // Original client order ID; This is the ID of the order being canceled
-  x: ExecutionType; // Current execution type
-  X: OrderStatus; // Current order status
-  r: string; // Order reject reason; will be an error code.
-  i: number; // Order ID
-  l: string; // Last executed quantity
-  z: string; // Cumulative filled quantity
-  L: string; // Last executed price
-  n: string; // Commission amount
-  N: string; // Commission asset
-  T: number; // Transaction time
-  t: number; // Trade ID
-  I: number; // Ignore
-  w: boolean; // Is the order on the book?
-  m: boolean; // Is this trade the maker side?
-  M: boolean; // Ignore
-  O: number; // Order creation time
-  Z: string; // Cumulative quote asset transacted quantity
-  Y: string; // Last quote asset transacted quantity (i.e. lastPrice * lastQty)
-  Q: string; // Quote Order Qty
+export interface ExecutionReportEvent {
+  commission: string; // Commission amount
+  commissionAsset: string | null; // Commission asset
+  creationTime: number; // Order creation time
+  eventTime: number;
+  eventType: Event.ExecutionReport;
+  executionType: ExecutionType; // Current execution type
+  icebergQuantity: string; // Iceberg quantity
+  isBuyerMaker: boolean; // Is this trade the maker side?
+  isOrderWorking: boolean; // Is the order on the book?
+  lastQuoteTransacted: string; // Last quote asset transacted quantity (i.e. lastPrice * lastQty);
+  lastTradeQuantity: string; // Last executed quantity
+  newClientOrderId: string; // Client order ID
+  orderId: number; // Order ID
+  orderListId: number; // OrderListId
+  orderRejectReason: string; // Order reject reason; will be an error code.
+  orderStatus: OrderStatus; // Current order status
+  orderTime: number; // Transaction time
+  orderType: OrderType; // Order type
+  originalClientOrderId: string | null; // Original client order ID; This is the ID of the order being canceled
+  price: string; // Order price
+  priceLastTrade: string; // Last executed price
+  quantity: string; // Order quantity
+  quoteOrderQuantity: string; // Quote Order Qty
+  side: Side; // Side
+  stopPrice: string; // Stop price
+  symbol: string; // Symbol
+  timeInForce: TimeInForce; // Time in force
+  totalQuoteTradeQuantity: string; // Cumulative quote asset transacted quantity
+  totalTradeQuantity: string; // Cumulative filled quantity
+  tradeId: number; // Trade ID
 }
 
 enum ListStatusType {
@@ -160,21 +138,21 @@ enum ListOrderStatus {
   AllDone = 'ALL_DONE',
   Reject = 'REJECT',
 }
-interface ListStatus {
-  e: Event.ListStatus;
-  E: number;
-  s: Symbol;
-  g: number;
-  c: 'OCO';
-  l: ListStatusType;
-  L: ListOrderStatus;
-  r: 'NONE';
-  C: string;
-  T: number;
-  O: { s: Symbol; i: number; c: string }[];
+export interface ListStatusEvent {
+  eventType: Event.ListStatus;
+  eventTime: number;
+  symbol: Symbol;
+  orderListId: number;
+  contingencyType: 'OCO';
+  listStatusType: ListStatusType;
+  listOrderStatus: ListOrderStatus;
+  listRejectReason: 'NONE';
+  listClientOrderId: string;
+  transactionTime: number;
+  orders: { symbol: Symbol; orderId: number; clientOrderId: string }[];
 }
 
-export type Payload = OutboundAccountPositionEvent | BalanceUpdateEvent | ExecutionReportEvent | ListStatus;
+export type Payload = OutboundAccountPositionEvent | BalanceUpdateEvent | ExecutionReportEvent | ListStatusEvent;
 
 export enum OrderResponse {
   Ack = 'ACK',
