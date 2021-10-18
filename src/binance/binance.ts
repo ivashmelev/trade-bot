@@ -34,8 +34,8 @@ export const initBinanceRest = async () => {
       console.log(
         error.config.url,
         error.config.method,
-        error.response.statusText,
-        JSON.stringify(error.response.data, null, 2),
+        error.response!.statusText,
+        JSON.stringify(error.response!.data, null, 2),
         JSON.stringify(error.config.params, null, 2)
       );
 

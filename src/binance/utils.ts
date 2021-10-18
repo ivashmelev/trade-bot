@@ -11,7 +11,7 @@ const makeQueryString = (q: any): string =>
 
 export const getSignature = (data: any): string => {
   return crypto
-    .createHmac('sha256', process.env.BINANCE_SECRET_KEY)
+    .createHmac('sha256', process.env.BINANCE_SECRET_KEY!)
     .update(makeQueryString(data).substr(1))
     .digest('hex');
 };

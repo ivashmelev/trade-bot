@@ -21,7 +21,7 @@ import {
 import { calcValueByPercentage, parseExecutionReportEvents } from './utils';
 
 /**
- * TODO
+ *
  * 1. Сохранять ids ордеров
  * 2. Реализовать функционал стоп лосса
  * 3. Обновить вебсокет согласно новой стратегии
