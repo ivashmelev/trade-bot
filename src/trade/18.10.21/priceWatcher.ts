@@ -1,12 +1,12 @@
-import { binanceRestPublic } from '../binance';
-import { Symbol } from './types';
+import { binanceRestPublic } from '../../binance';
+import { Symbol } from '../types';
 
-interface IPriceObserver {
+interface IPriceWatcher {
   price: number;
-  observ: () => Promise<number>;
+  watch: () => Promise<number>;
 }
 
-export class PriceObserver implements IPriceObserver {
+export class PriceWatcher implements IPriceWatcher {
   private symbol: Symbol;
   price: number;
 
@@ -14,7 +14,7 @@ export class PriceObserver implements IPriceObserver {
     this.symbol = symbol;
   }
 
-  async observ() {
+  async watch() {
     try {
       const response = await binanceRestPublic.get<{
         symbol: Symbol;
@@ -23,7 +23,7 @@ export class PriceObserver implements IPriceObserver {
 
       return Number(response.data.price);
     } catch (error) {
-      return Promise.reject(new Error('Price observer error method observ'));
+      return Promise.reject(new Error('Price watcher error from method watch'));
     }
   }
 }

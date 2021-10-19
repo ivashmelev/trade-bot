@@ -1,3 +1,5 @@
+import { StopLossOrder } from '@prisma/client';
+
 interface OrderTypeThreshold {
   takeProfit: number;
   stopLoss: number;
@@ -236,3 +238,5 @@ export interface Oco {
   orders: Order[];
   orderReports: Order[];
 }
+
+export type StopLossEntity = Omit<StopLossOrder, 'id'>;
