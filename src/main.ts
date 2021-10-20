@@ -4,7 +4,7 @@ import { initBinanceRest, initBinanceWebsocket } from './binance';
 import { Trade } from './trade';
 import { Symbol } from './trade/types';
 import { TradeFacade } from './trade/tradeFacade';
-import { Bot } from './trade/18.10.21/tradeFacade';
+import { Bot } from './trade/18.10.21/trade';
 
 const app = express();
 const port = 5000;
@@ -42,7 +42,7 @@ app.listen(port, async () => {
   try {
     await initBinanceRest();
     await initBinanceWebsocket();
-    // Bot.start();
+    Bot.start();
 
     console.log('Bot is running!');
   } catch (error) {

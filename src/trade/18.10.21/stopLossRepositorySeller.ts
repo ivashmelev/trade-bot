@@ -7,6 +7,7 @@ import { StopLossRepository } from './stopLossRepository';
 
 interface IStopLossRepositorySeller {
   orderId: number;
+  isHaveActiveOrder: boolean;
   placeSellOrder: () => Promise<Order>;
   trackingWhenCanPlaceOrder: () => void;
 }
@@ -19,6 +20,7 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
   private priceWatcher: PriceWatcher;
 
   orderId: number;
+  isHaveActiveOrder: boolean;
 
   constructor(
     symbol: Symbol,
@@ -32,6 +34,7 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
     this.limitThreshold = limitThreshold;
     this.stopLossRepository = stopLossRepository;
     this.priceWatcher = priceWatcher;
+    this.isHaveActiveOrder = false;
   }
 
   private get averagePrice(): number {
@@ -84,7 +87,6 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
 
   trackingWhenCanPlaceOrder() {
     setInterval(async () => {
-      console.log(this.priceWatcher.price);
       if (this.priceWatcher.price >= this.averagePrice) {
         this.orderId = (await this.placeSellOrder()).orderId;
       }
