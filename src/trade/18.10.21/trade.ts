@@ -55,7 +55,7 @@ let orderSellerTimeout;
 let stopLossRepositorySellerTimeout;
 
 const handleCancellationSellOrder = (orderId: number, orderPrice: number) => () => {
-  if (priceWatcher.price <= calcValueByPercentage(orderPrice, threshold.sell.stopLoss)) {
+  if (priceWatcher.price >= calcValueByPercentage(orderPrice, threshold.sell.stopLoss)) {
     orderCanceler.cancel(orderId);
   }
 };

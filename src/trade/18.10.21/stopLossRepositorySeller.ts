@@ -52,11 +52,11 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
   }
 
   private get price() {
-    return calcValueByPercentage(this.averagePrice, this.threshold).toFixed(2);
+    return calcValueByPercentage(this.priceWatcher.price, this.threshold).toFixed(2);
   }
 
   private get stopPrice() {
-    return calcValueByPercentage(this.averagePrice, this.threshold + this.limitThreshold).toFixed(2);
+    return calcValueByPercentage(this.priceWatcher.price, this.threshold + this.limitThreshold).toFixed(2);
   }
 
   private get quantity() {
