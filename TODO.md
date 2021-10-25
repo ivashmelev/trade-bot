@@ -5,7 +5,5 @@ TEST: Отслеживать цену (PriceWatcher)
 TEST: Выставлять OCO на покупку (OcoBuyer)
 TEST: Выставлять take profit ордер на продажу (OrderSeller)
 TEST: Выставлять stop loss ордера на продажу из базы (StopLossRepositorySeller)
-TODO: Уметь отменять ордера (OrderCanceler)
-TODO: Механизм отмены ордеров, отрефакторить PriceWatcher чтобы каждые 10 секунд смотрел цену, а в NEW написать условие отмены ордера (OrderSeller, StopLossRepositorySeller)
-
-BUG: StopLossRepositorySeller бесконечно выставляет ордера
+TEST: Уметь отменять ордера (OrderCanceler)
+TEST: Механизм отмены ордеров, отрефакторить PriceWatcher чтобы каждые 10 секунд смотрел цену, а в NEW написать условие отмены ордера (OrderSeller, StopLossRepositorySeller)

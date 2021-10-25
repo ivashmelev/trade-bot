@@ -50,7 +50,7 @@ export class OrderSeller implements IOrderSeller {
           side: Side.Sell,
           quantity: this.quantity,
           newOrderRespType: OrderResponse.Result,
-          timeInForce: TimeInForce.Fok,
+          timeInForce: TimeInForce.Gtc,
         } as OrderParams,
       });
 

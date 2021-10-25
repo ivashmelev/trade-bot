@@ -75,7 +75,7 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
           side: Side.Sell,
           quantity: this.quantity,
           newOrderRespType: OrderResponse.Result,
-          timeInForce: TimeInForce.Fok,
+          timeInForce: TimeInForce.Gtc,
         } as OrderParams,
       });
 
@@ -87,7 +87,7 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
 
   trackingWhenCanPlaceOrder() {
     setInterval(async () => {
-      if (this.priceWatcher.price >= this.averagePrice) {
+      if (this.priceWatcher.price >= this.averagePrice && !this.isHaveActiveOrder) {
         this.orderId = (await this.placeSellOrder()).orderId;
       }
     }, 10 * 1000);
