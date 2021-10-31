@@ -1,6 +1,6 @@
 import moment from 'moment';
-import { binanceRestPublic } from '../../binance';
-import { Symbol } from '../types';
+import { binanceRestPublic } from '../binance';
+import { SymbolToken } from './types';
 
 interface IPriceWatcher {
   price: number;
@@ -9,17 +9,17 @@ interface IPriceWatcher {
 }
 
 export class PriceWatcher implements IPriceWatcher {
-  private symbol: Symbol;
+  private symbol: SymbolToken;
   price: number;
 
-  constructor(symbol: Symbol) {
+  constructor(symbol: SymbolToken) {
     this.symbol = symbol;
   }
 
-  async watch() {
+  async watch(): Promise<number> {
     try {
       const response = await binanceRestPublic.get<{
-        symbol: Symbol;
+        symbol: SymbolToken;
         price: string;
       }>('/ticker/price', { params: { symbol: this.symbol } });
 
@@ -29,8 +29,10 @@ export class PriceWatcher implements IPriceWatcher {
     }
   }
 
-  trackingPrice() {
+  async trackingPrice(): Promise<void> {
     try {
+      this.price = await this.watch();
+
       setInterval(async () => {
         this.price = await this.watch();
         console.log(`${moment().format('HH:mm:ss')} [PRICE]: ${this.price} `);

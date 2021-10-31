@@ -1,5 +1,5 @@
-import prisma from '../../database';
-import { StopLossEntity } from '../types';
+import prisma from '../database';
+import { StopLossEntity } from './types';
 
 interface IStopLossRepository {
   orders: StopLossEntity[];
@@ -11,12 +11,16 @@ export class StopLossRepository implements IStopLossRepository {
   orders: StopLossEntity[];
 
   constructor() {
-    (async () => {
-      this.orders = await prisma.stopLossOrder.findMany();
+    void (async () => {
+      try {
+        this.orders = await prisma.stopLossOrder.findMany();
+      } catch (error) {
+        throw new Error('Error from stop loss repository');
+      }
     })();
   }
 
-  async save(data: StopLossEntity) {
+  async save(data: StopLossEntity): Promise<void> {
     try {
       await prisma.stopLossOrder.create({ data });
       this.orders.push(data);
@@ -25,7 +29,7 @@ export class StopLossRepository implements IStopLossRepository {
     }
   }
 
-  async clear() {
+  async clear(): Promise<void> {
     try {
       await prisma.stopLossOrder.deleteMany();
       this.orders = [];

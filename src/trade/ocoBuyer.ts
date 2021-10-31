@@ -1,6 +1,7 @@
-import { binanceRestPrivate } from '../../binance';
-import { Oco, OcoParams, Side, Symbol, TimeInForce } from '../types';
-import { calcValueByPercentage } from '../utils';
+import { AxiosError } from 'axios';
+import { binanceRestPrivate } from '../binance';
+import { BinanceRequestError, Oco, OcoParams, Side, SymbolToken, TimeInForce } from './types';
+import { calcValueByPercentage } from './utils';
 import { PriceWatcher } from './priceWatcher';
 
 interface IOcoBuyer {
@@ -10,7 +11,7 @@ interface IOcoBuyer {
 
 export class OcoBuyer implements IOcoBuyer {
   ocoId: number;
-  private symbol: Symbol;
+  private symbol: SymbolToken;
   private deposit: number;
   private takeProfitThreshold: number;
   private stopLossThreshold: number;
@@ -18,7 +19,7 @@ export class OcoBuyer implements IOcoBuyer {
   private priceWatcher: PriceWatcher;
 
   constructor(
-    symbol: Symbol,
+    symbol: SymbolToken,
     deposit: number,
     takeProfitThreshold: number,
     stopLossThreshold: number,
@@ -34,6 +35,7 @@ export class OcoBuyer implements IOcoBuyer {
   }
 
   private get price() {
+    console.log('price in price', this.priceWatcher.price);
     return calcValueByPercentage(this.priceWatcher.price, this.takeProfitThreshold).toFixed(2);
   }
 
@@ -46,11 +48,14 @@ export class OcoBuyer implements IOcoBuyer {
   }
 
   private get quantity(): string {
-    const quantityStr: string = String(this.deposit / this.priceWatcher.price);
+    const quantityStr = String(this.deposit / this.priceWatcher.price);
     return quantityStr.slice(0, quantityStr.lastIndexOf('.') + 6);
   }
 
-  async placeBuyOco() {
+  async placeBuyOco(): Promise<Oco> {
+    console.log('price', this.price);
+    console.log('stopPrice', this.stopPrice);
+    console.log('stopLimitPrice', this.stopLimitPrice);
     this.priceWatcher.price = await this.priceWatcher.watch();
 
     try {
@@ -68,6 +73,12 @@ export class OcoBuyer implements IOcoBuyer {
 
       return response.data;
     } catch (error) {
+      const axiosError = error as AxiosError<BinanceRequestError>;
+
+      if (axiosError.response?.data.code === -2010) {
+        return await this.placeBuyOco();
+      }
+
       return Promise.reject(new Error('Oco buyer error from method placeBuyOco'));
     }
   }

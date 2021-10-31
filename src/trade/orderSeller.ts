@@ -1,6 +1,16 @@
-import { binanceRestPrivate } from '../../binance';
-import { Order, OrderParams, OrderResponse, OrderType, Side, TimeInForce, Symbol } from '../types';
-import { calcValueByPercentage } from '../utils';
+import { AxiosError } from 'axios';
+import { binanceRestPrivate } from '../binance';
+import {
+  Order,
+  OrderParams,
+  OrderResponse,
+  OrderType,
+  Side,
+  TimeInForce,
+  SymbolToken,
+  BinanceRequestError,
+} from './types';
+import { calcValueByPercentage } from './utils';
 import { PriceWatcher } from './priceWatcher';
 
 interface IOrderSeller {
@@ -10,13 +20,19 @@ interface IOrderSeller {
 
 export class OrderSeller implements IOrderSeller {
   orderId: number;
-  private symbol: Symbol;
+  private symbol: SymbolToken;
   private deposit: number;
   private threshold: number;
   private limitThreshold: number;
   private priceWatcher: PriceWatcher;
 
-  constructor(symbol: Symbol, deposit: number, threshold: number, limitThreshold: number, priceWatcher: PriceWatcher) {
+  constructor(
+    symbol: SymbolToken,
+    deposit: number,
+    threshold: number,
+    limitThreshold: number,
+    priceWatcher: PriceWatcher
+  ) {
     this.symbol = symbol;
     this.deposit = deposit;
     this.threshold = threshold;
@@ -33,11 +49,11 @@ export class OrderSeller implements IOrderSeller {
   }
 
   private get quantity(): string {
-    const quantityStr: string = String(this.deposit / this.priceWatcher.price);
+    const quantityStr = String(this.deposit / this.priceWatcher.price);
     return quantityStr.slice(0, quantityStr.lastIndexOf('.') + 6);
   }
 
-  async placeSellOrder() {
+  async placeSellOrder(): Promise<Order> {
     try {
       this.priceWatcher.price = await this.priceWatcher.watch();
 
@@ -56,6 +72,12 @@ export class OrderSeller implements IOrderSeller {
 
       return response.data;
     } catch (error) {
+      const axiosError = error as AxiosError<BinanceRequestError>;
+
+      if (axiosError.response?.data.code === -2010) {
+        return await this.placeSellOrder();
+      }
+
       return Promise.reject(new Error('Take profit seller error method placeSellOrder'));
     }
   }

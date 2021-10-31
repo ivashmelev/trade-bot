@@ -1,11 +1,11 @@
-import { Event, OrderStatus, OrderType, Side, Symbol } from '../types';
+import { Event, OrderStatus, OrderType, Side, Symbol } from './types';
 import { OcoBuyer } from './ocoBuyer';
 import { PriceWatcher } from './priceWatcher';
 import { StopLossRepository } from './stopLossRepository';
 import { StopLossRepositorySeller } from './stopLossRepositorySeller';
 import { OrderSeller } from './orderSeller';
-import { binanceWebsocket } from '../../binance';
-import { calcValueByPercentage, parseExecutionReportEvents } from '../utils';
+import { binanceWebsocket } from '../binance';
+import { calcValueByPercentage, parseExecutionReportEvents } from './utils';
 import chalk from 'chalk';
 import moment from 'moment';
 import { OrderCanceler } from './orderCanceler';
@@ -21,7 +21,7 @@ const threshold = {
     takeProfit: 0.2,
     stopLoss: -0.2,
   },
-  limit: 0.05,
+  limit: 0.1,
 };
 
 const symbol = Symbol.Btcusdt;
@@ -51,12 +51,15 @@ const stopLossRepositorySeller = new StopLossRepositorySeller(
 
 const orderCanceler = new OrderCanceler(symbol);
 
-let orderSellerTimeout;
-let stopLossRepositorySellerTimeout;
+let orderSellerInterval: NodeJS.Timer;
+let stopLossRepositorySellerInterval: NodeJS.Timer;
 
 const handleCancellationSellOrder = (orderId: number, orderPrice: number) => () => {
   console.log(
-    `cancellation hanler - ${priceWatcher.price} <= ${calcValueByPercentage(orderPrice, threshold.sell.stopLoss)}`
+    `cancellation hanler ${orderId} - ${priceWatcher.price} <= ${calcValueByPercentage(
+      orderPrice,
+      threshold.sell.stopLoss
+    )}`
   );
   if (priceWatcher.price <= calcValueByPercentage(orderPrice, threshold.sell.stopLoss)) {
     orderCanceler.cancel(orderId);
@@ -66,12 +69,26 @@ const handleCancellationSellOrder = (orderId: number, orderPrice: number) => () 
 export const Bot = {
   start: () => {
     binanceWebsocket.addEventListener('open', () => {
-      // (async () => {
-      priceWatcher.trackingPrice();
-      ocoBuyer.placeBuyOco();
-      // orderSeller.orderId = (await orderSeller.placeSellOrder()).orderId;
-      // stopLossRepositorySeller.trackingWhenCanPlaceOrder();
-      // })();
+      (async () => {
+        await priceWatcher.trackingPrice();
+        await ocoBuyer.placeBuyOco();
+
+        setInterval(async () => {
+          if (
+            priceWatcher.price >= stopLossRepositorySeller.averagePrice &&
+            !stopLossRepositorySeller.isHaveActiveOrder
+          ) {
+            stopLossRepositorySeller.orderId = (await stopLossRepositorySeller.placeSellOrder()).orderId;
+            stopLossRepositorySeller.isHaveActiveOrder = true;
+            stopLossRepositorySellerInterval = setInterval(
+              handleCancellationSellOrder(stopLossRepositorySeller.orderId, priceWatcher.price),
+              10 * 1000
+            );
+          }
+        }, 10 * 1000);
+        // orderSeller.orderId = (await orderSeller.placeSellOrder()).orderId;
+        // stopLossRepositorySeller.trackingWhenCanPlaceOrder();
+      })();
     });
 
     binanceWebsocket.addEventListener('message', (e: MessageEvent<string>) => {
@@ -83,31 +100,33 @@ export const Bot = {
 
           switch (payload.orderStatus) {
             case OrderStatus.New: {
-              console.log(
-                chalk.bgBlue(
-                  `${moment().format('HH:mm:ss.SSS')} NEW ${payload.side} ${payload.orderType} ${payload.orderId}`
-                )
-              );
-              console.log(chalk.bgBlue(`order seller - ${orderSeller.orderId}`));
-              console.log(chalk.bgBlue(`stop loss repository seller - ${stopLossRepositorySeller.orderId}`));
-              console.log(payload);
-
-              if (payload.orderId === orderSeller.orderId) {
-                orderSellerTimeout = setTimeout(
-                  handleCancellationSellOrder(payload.orderId, priceWatcher.price),
-                  10 * 1000
+              if (!payload.isOrderWorking) {
+                console.log(
+                  chalk.bgBlue(
+                    `${moment().format('HH:mm:ss.SSS')} NEW ${payload.side} ${payload.orderType} ${payload.orderId}`
+                  )
                 );
+                console.log(chalk.bgBlue(`order seller - ${orderSeller.orderId}`));
+                console.log(chalk.bgBlue(`stop loss repository seller - ${stopLossRepositorySeller.orderId}`));
+                // console.log(chalk.bgBlue(`stop loss repository seller - ${stopLossRepositorySeller.orderId}`));
+                console.log(payload);
+
+                // if (payload.orderId === orderSeller.orderId) {
+                //   orderSellerInterval = setInterval(
+                //     handleCancellationSellOrder(payload.orderId, priceWatcher.price),
+                //     10 * 1000
+                //   );
+                // }
+
+                // if (payload.orderId === stopLossRepositorySeller.orderId) {
+                //   stopLossRepositorySeller.isHaveActiveOrder = true;
+
+                //   stopLossRepositorySellerInterval = setInterval(
+                //     handleCancellationSellOrder(payload.orderId, priceWatcher.price),
+                //     10 * 1000
+                //   );
+                // }
               }
-
-              if (payload.orderId === stopLossRepositorySeller.orderId) {
-                stopLossRepositorySeller.isHaveActiveOrder = true;
-
-                stopLossRepositorySellerTimeout = setTimeout(
-                  handleCancellationSellOrder(payload.orderId, priceWatcher.price),
-                  10 * 1000
-                );
-              }
-
               break;
             }
 
@@ -119,21 +138,24 @@ export const Bot = {
               );
               console.log(payload);
 
-              if (payload.side === Side.Buy) {
-                orderSeller.placeSellOrder().then((value) => (orderSeller.orderId = value.orderId));
-                // orderSeller.orderId = (await orderSeller.placeSellOrder()).orderId;
-              } else if (payload.side === Side.Sell) {
-                ocoBuyer.ocoId = (await ocoBuyer.placeBuyOco()).orderListId;
-              }
-
               if (payload.orderId === orderSeller.orderId) {
-                clearInterval(orderSellerTimeout);
+                clearInterval(orderSellerInterval);
               }
 
               if (payload.orderId === stopLossRepositorySeller.orderId) {
                 stopLossRepositorySeller.isHaveActiveOrder = false;
-                clearInterval(stopLossRepositorySellerTimeout);
+                clearInterval(stopLossRepositorySellerInterval);
                 stopLossRepository.clear();
+              }
+
+              if (payload.side === Side.Buy) {
+                orderSeller.orderId = (await orderSeller.placeSellOrder()).orderId;
+                orderSellerInterval = setInterval(
+                  handleCancellationSellOrder(orderSeller.orderId, priceWatcher.price),
+                  10 * 1000
+                );
+              } else if (payload.side === Side.Sell) {
+                ocoBuyer.ocoId = (await ocoBuyer.placeBuyOco()).orderListId;
               }
 
               break;
@@ -144,7 +166,7 @@ export const Bot = {
                 console.log(chalk.bgRed(`${moment().format('HH:mm:ss.SSS')} EXPIRED SELL ORDER ${payload.orderId}`));
                 console.log(payload);
 
-                clearInterval(orderSellerTimeout);
+                clearInterval(orderSellerInterval);
                 stopLossRepository.save({
                   price: payload.price,
                   quantity: payload.quantity,
@@ -169,7 +191,7 @@ export const Bot = {
                 console.log(chalk.bgMagenta(`${moment().format('HH:mm:ss.SSS')} CANCEL SELL ORDER ${payload.orderId}`));
                 console.log(payload);
 
-                clearInterval(orderSellerTimeout);
+                clearInterval(orderSellerInterval);
                 stopLossRepository.save({
                   price: payload.price,
                   quantity: payload.quantity,
@@ -186,7 +208,7 @@ export const Bot = {
                 console.log(payload);
 
                 stopLossRepositorySeller.isHaveActiveOrder = false;
-                clearInterval(stopLossRepositorySellerTimeout);
+                clearInterval(stopLossRepositorySellerInterval);
               }
             }
           }

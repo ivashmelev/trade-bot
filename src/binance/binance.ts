@@ -7,9 +7,9 @@ export let binanceRestPrivate: AxiosInstance;
 export let binanceRestPublic: AxiosInstance;
 export let binanceWebsocket: ReconnectingWebSocket;
 
-const url = `${process.env.BINANCE_API_URL}/api/v3`;
+const url = `${process.env.BINANCE_API_URL as string}/api/v3`;
 
-export const initBinanceRest = async () => {
+export const initBinanceRest = (): void => {
   try {
     binanceRestPrivate = axios.create({
       baseURL: url,
@@ -24,8 +24,10 @@ export const initBinanceRest = async () => {
     binanceRestPrivate.interceptors.request.use(async (config) => {
       const timeResponse = await axios.get<{ serverTime: string }>(`${url}/time`);
 
-      config.params.timestamp = timeResponse.data.serverTime;
-      config.params.signature = getSignature(config.params);
+      config.params = {
+        timestamp: timeResponse.data.serverTime,
+        signature: getSignature(config.params),
+      };
 
       return config;
     });
@@ -34,8 +36,8 @@ export const initBinanceRest = async () => {
       console.log(
         error.config.url,
         error.config.method,
-        error.response!.statusText,
-        JSON.stringify(error.response!.data, null, 2),
+        error.response?.statusText,
+        JSON.stringify(error.response?.data, null, 2),
         JSON.stringify(error.config.params, null, 2)
       );
 
@@ -53,17 +55,17 @@ export const initBinanceRest = async () => {
   }
 };
 
-export const initBinanceWebsocket = async () => {
+export const initBinanceWebsocket = async (): Promise<void> => {
   try {
     const { listenKey } = (await binanceRestPublic.post<{ listenKey: string }>('/userDataStream')).data;
 
-    binanceWebsocket = new ReconnectingWebSocket(`${process.env.BINANCE_WS_URL}/${listenKey}`, [], {
+    binanceWebsocket = new ReconnectingWebSocket(`${process.env.BINANCE_WS_URL as string}/${listenKey}`, [], {
       WebSocket,
       connectionTimeout: 10000,
     });
 
     setInterval(() => {
-      binanceRestPublic.put('/userDataStream', null, { params: { listenKey } });
+      void binanceRestPublic.put('/userDataStream', null, { params: { listenKey } });
     }, 30 * 60000);
   } catch (error) {
     console.log(error);

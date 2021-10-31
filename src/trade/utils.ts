@@ -1,5 +1,8 @@
-import { UserDataStreamEvent } from 'binance-api-node';
-import { binanceWebsocket } from '../binance';
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BalanceUpdateEvent,
   Event,
@@ -86,17 +89,4 @@ export const parseListStatusEvent = (event: any): ListStatusEvent => {
     transactionTime: event.T,
     orders: event.O,
   };
-};
-
-export const listenOrderStream = (callback: (payload: ExecutionReportEvent) => Promise<void>) => {
-  binanceWebsocket.addEventListener('message', (e: MessageEvent<string>) => {
-    (async () => {
-      const event = JSON.parse(e.data) as { e: Event };
-
-      if (event.e === Event.ExecutionReport) {
-        const payload = parseExecutionReportEvents(event);
-        await callback(payload);
-      }
-    })();
-  });
 };

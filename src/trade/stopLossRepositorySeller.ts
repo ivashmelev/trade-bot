@@ -1,7 +1,6 @@
-import { StopLossOrder } from '.prisma/client';
-import { binanceRestPrivate } from '../../binance';
-import { Order, OrderParams, OrderResponse, OrderType, Side, TimeInForce, Symbol } from '../types';
-import { calcValueByPercentage } from '../utils';
+import { binanceRestPrivate } from '../binance';
+import { Order, OrderParams, OrderResponse, OrderType, Side, TimeInForce, SymbolToken } from './types';
+import { calcValueByPercentage } from './utils';
 import { PriceWatcher } from './priceWatcher';
 import { StopLossRepository } from './stopLossRepository';
 
@@ -9,11 +8,10 @@ interface IStopLossRepositorySeller {
   orderId: number;
   isHaveActiveOrder: boolean;
   placeSellOrder: () => Promise<Order>;
-  trackingWhenCanPlaceOrder: () => void;
 }
 
 export class StopLossRepositorySeller implements IStopLossRepositorySeller {
-  private symbol: Symbol;
+  private symbol: SymbolToken;
   private threshold: number;
   private limitThreshold: number;
   private stopLossRepository: StopLossRepository;
@@ -23,7 +21,7 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
   isHaveActiveOrder: boolean;
 
   constructor(
-    symbol: Symbol,
+    symbol: SymbolToken,
     threshold: number,
     limitThreshold: number,
     stopLossRepository: StopLossRepository,
@@ -37,7 +35,7 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
     this.isHaveActiveOrder = false;
   }
 
-  private get averagePrice(): number {
+  get averagePrice(): number {
     const sum = this.stopLossRepository.orders.reduce((prev, value) => {
       return prev + Number(value.price);
     }, 0);
@@ -64,7 +62,7 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
     return amountQuantityStr.slice(0, amountQuantityStr.lastIndexOf('.') + 6);
   }
 
-  async placeSellOrder() {
+  async placeSellOrder(): Promise<Order> {
     try {
       const response = await binanceRestPrivate.post<Order>('/order', null, {
         params: {
@@ -83,13 +81,5 @@ export class StopLossRepositorySeller implements IStopLossRepositorySeller {
     } catch (error) {
       return Promise.reject(new Error('Stop loss repository seller error from method placeSellOrder'));
     }
-  }
-
-  trackingWhenCanPlaceOrder() {
-    setInterval(async () => {
-      if (this.priceWatcher.price >= this.averagePrice && !this.isHaveActiveOrder) {
-        this.orderId = (await this.placeSellOrder()).orderId;
-      }
-    }, 10 * 1000);
   }
 }

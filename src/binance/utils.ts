@@ -1,4 +1,6 @@
-import hash from 'hash.js';
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from 'crypto';
 
 const makeQueryString = (q: any): string =>
@@ -11,7 +13,7 @@ const makeQueryString = (q: any): string =>
 
 export const getSignature = (data: any): string => {
   return crypto
-    .createHmac('sha256', process.env.BINANCE_SECRET_KEY!)
+    .createHmac('sha256', process.env.BINANCE_SECRET_KEY as string)
     .update(makeQueryString(data).substr(1))
     .digest('hex');
 };
