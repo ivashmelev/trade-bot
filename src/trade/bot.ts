@@ -142,7 +142,7 @@ export class Bot {
                   this.handleCancellationSellOrder(this.orderSeller.orderId, this.priceWatcher.price),
                   10 * 1000
                 );
-              } else if (payload.side === Side.Sell) {
+              } else if (payload.side === Side.Sell && payload.orderId === this.orderSeller.orderId) {
                 this.ocoBuyer.ocoId = (await this.ocoBuyer.placeBuyOco()).orderListId;
               }
 
