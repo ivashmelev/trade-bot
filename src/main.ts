@@ -7,6 +7,7 @@ import { Bot } from './trade/bot';
 const app = express();
 const port = 5000;
 const trade = new TradeFacade();
+const bot = new Bot();
 
 app.get('/cancelAll', async (req, res) => {
   res.send(await trade.cancelOrders());
@@ -24,7 +25,7 @@ app.listen(port, async () => {
   try {
     initBinanceRest();
     await initBinanceWebsocket();
-    Bot.start();
+    bot.start();
 
     console.log('Bot is running!');
   } catch (error) {

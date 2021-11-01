@@ -57,7 +57,6 @@ export class OcoBuyer implements IOcoBuyer {
     console.log('stopPrice', this.stopPrice);
     console.log('stopLimitPrice', this.stopLimitPrice);
     this.priceWatcher.price = await this.priceWatcher.watch();
-
     try {
       const response = await binanceRestPrivate.post<Oco>('/order/oco', null, {
         params: {

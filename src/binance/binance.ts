@@ -24,10 +24,10 @@ export const initBinanceRest = (): void => {
     binanceRestPrivate.interceptors.request.use(async (config) => {
       const timeResponse = await axios.get<{ serverTime: string }>(`${url}/time`);
 
-      config.params = {
-        timestamp: timeResponse.data.serverTime,
-        signature: getSignature(config.params),
-      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      config.params.timestamp = timeResponse.data.serverTime;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      config.params.signature = getSignature(config.params);
 
       return config;
     });
