@@ -5,7 +5,7 @@
     "outDir": "dist",
     "moduleResolution": "Node",
     "module": "CommonJS",
-    "strictNullChecks": true
+    "strictNullChecks": true,
   },
   "exclude": [
     "./node_modules/**/*",
