@@ -21,3 +21,8 @@ export const getPrice = (
   }
   return calcValueByPercentage(price, percentage).toFixed(2);
 };
+
+export const setIntervalAsync = async (callback: () => Promise<void>, ms: number): Promise<void> => {
+  await callback();
+  setTimeout(() => setIntervalAsync(callback, ms), ms);
+};
