@@ -10,6 +10,7 @@ export class OrderPricePublisher implements PricePublisher {
 
   constructor(symbol: SymbolToken) {
     this.symbol = symbol;
+    this.observers = [];
   }
 
   subscribe(observer: PriceObserver): void {
