@@ -28,7 +28,7 @@ export class OcoOrder implements Order {
 
       return response.data.orderReports[0];
     } catch (error) {
-      console.log('OcoOrder error from method expose');
+      console.log(new Error('OcoOrder error from method expose'));
       return await this.expose(side, price, quantity);
     }
   }

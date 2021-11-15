@@ -14,3 +14,9 @@ export interface PricePublisher {
   unsubscribe: (observer: PriceObserver) => void;
   notify: () => void;
 }
+
+export interface OrderRepository {
+  save: (price: string, quantity: string) => Promise<void>;
+  clear: () => Promise<void>;
+  getOrders: () => Promise<void>;
+}

@@ -21,7 +21,7 @@ export class OrderPricePublisher implements PricePublisher {
     const index = this.observers.indexOf(observer);
 
     if (index === -1) {
-      console.log('OrderPricePublisher error from method unsubscribe');
+      console.log(new Error('OrderPricePublisher error from method unsubscribe'));
     } else {
       this.observers.splice(index, 1);
     }
@@ -33,12 +33,16 @@ export class OrderPricePublisher implements PricePublisher {
 
   async startGetPrice(): Promise<void> {
     await setIntervalAsync(async () => {
-      const response = await binanceRestPublic.get<{ symbol: SymbolToken; price: string }>('/ticker/price', {
-        params: { symbol: this.symbol },
-      });
+      try {
+        const response = await binanceRestPublic.get<{ symbol: SymbolToken; price: string }>('/ticker/price', {
+          params: { symbol: this.symbol },
+        });
 
-      this.price = Number(response.data.price);
-      this.notify();
+        this.price = Number(response.data.price);
+        this.notify();
+      } catch (error) {
+        console.log(new Error('OrderPricePublisher error from method unsubscribe'));
+      }
     }, 1000);
   }
 }

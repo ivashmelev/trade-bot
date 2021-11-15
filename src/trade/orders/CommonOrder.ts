@@ -22,21 +22,26 @@ export class CommonOrder implements Order {
   }
 
   async expose(side: Side, price: number, quantity: string, type: OrderType): Promise<OrderDto> {
-    const response = await binanceRestPrivate.post<OrderDto>('/order', null, {
-      params: {
-        symbol: this.symbol,
-        side,
-        type,
-        quantity,
-        price: getPrice(this.threshold, side, type, price, false),
-        stopPrice: getPrice(this.threshold, side, type, price, true),
-        stopLimitTimeInForce: TimeInForce.Gtc,
-        newOrderRespType: OrderResponseType.Result,
-        timeInForce: TimeInForce.Gtc,
-      } as OrderDtoRequest,
-    });
+    try {
+      const response = await binanceRestPrivate.post<OrderDto>('/order', null, {
+        params: {
+          symbol: this.symbol,
+          side,
+          type,
+          quantity,
+          price: getPrice(this.threshold, side, type, price, false),
+          stopPrice: getPrice(this.threshold, side, type, price, true),
+          stopLimitTimeInForce: TimeInForce.Gtc,
+          newOrderRespType: OrderResponseType.Result,
+          timeInForce: TimeInForce.Gtc,
+        } as OrderDtoRequest,
+      });
 
-    return response.data;
+      return response.data;
+    } catch (error) {
+      console.log(new Error('SellOrder error from method cancel'));
+      return await this.expose(side, price, quantity, type);
+    }
   }
 
   async cancel(order: OrderDto): Promise<void> {
