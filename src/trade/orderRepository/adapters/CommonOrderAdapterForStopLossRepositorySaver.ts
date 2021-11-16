@@ -1,6 +1,6 @@
-import { CommonOrder } from '..';
+import { CommonOrder } from '../../orders';
 import { Order } from '../../interfaces';
-import { StopLossRepository } from '../../orderRepository';
+import { StopLossRepository } from '..';
 import { OrderDto, OrderType, Side } from '../../types';
 
 export class CommonOrderAdapterForStopLossRepositorySaver implements Order {

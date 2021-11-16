@@ -1,7 +1,7 @@
-import { CommonOrder } from '..';
+import { CommonOrder } from '../../orders';
 import { binanceWebsocket } from '../../../binance';
 import { Order } from '../../interfaces';
-import { StopLossRepository } from '../../orderRepository';
+import { StopLossRepository } from '..';
 import { Event, ExecutionReportEvent, OrderDto, OrderStatus, OrderType, Side } from '../../types';
 import { defineWebsocketEvent } from '../../utils';
 
