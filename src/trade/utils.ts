@@ -27,10 +27,31 @@ export const getPrice = (
   return calcValueByPercentage(price, percentage).toFixed(2);
 };
 
-export const setIntervalAsync = async (callback: () => Promise<void>, ms: number): Promise<void> => {
-  await callback();
-  setTimeout(() => setIntervalAsync(callback, ms), ms);
+export const setIntervalAsync = async (callback: () => Promise<void>, ms: number) => {
+  const timeout = { id: undefined as unknown as NodeJS.Timeout };
+
+  const handle = async (): Promise<{ id: NodeJS.Timeout }> => {
+    await callback();
+    timeout.id = setTimeout(() => handle(), ms);
+    return timeout;
+  };
+
+  return await handle();
 };
+
+// export const setIntervalAsync = async (
+//   callback: () => Promise<void>,
+//   ms: number,
+//   timeout?: { id: NodeJS.Timeout }
+// ): Promise<{ id: NodeJS.Timeout } | void> => {
+//   await callback();
+//   if (timeout) {
+//     timeout.id = setTimeout(() => setIntervalAsync(callback, ms, timeout), ms);
+//     return timeout;
+//   }
+
+//   setTimeout(() => setIntervalAsync(callback, ms, timeout), ms);
+// };
 
 export const parseExecutionReportEvents = (event: any): ExecutionReportEvent => {
   return {

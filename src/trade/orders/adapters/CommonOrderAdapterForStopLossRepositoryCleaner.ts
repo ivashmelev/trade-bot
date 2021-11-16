@@ -1,28 +1,21 @@
 import { CommonOrder } from '..';
 import { binanceWebsocket } from '../../../binance';
+import { Order } from '../../interfaces';
 import { StopLossRepository } from '../../orderRepository';
-import {
-  Event,
-  ExecutionReportEvent,
-  OrderDto,
-  OrderStatus,
-  OrderType,
-  Side,
-  SymbolToken,
-  Threshold,
-} from '../../types';
+import { Event, ExecutionReportEvent, OrderDto, OrderStatus, OrderType, Side } from '../../types';
 import { defineWebsocketEvent } from '../../utils';
 
-export class StopLossRepositoryCleanerToCommonOrderAdapter extends CommonOrder {
+export class CommonOrderAdapterForStopLossRepositoryCleaner implements Order {
+  private commonOrder: CommonOrder;
   private stopLossRepository: StopLossRepository;
 
-  constructor(stopLossRepository: StopLossRepository, symbol: SymbolToken, threshold: Threshold) {
-    super(symbol, threshold);
+  constructor(commonOrder: CommonOrder, stopLossRepository: StopLossRepository) {
+    this.commonOrder = commonOrder;
     this.stopLossRepository = stopLossRepository;
   }
 
   async expose(side: Side, _price: number, _quantity: string, type: OrderType): Promise<OrderDto> {
-    const order = await super.expose(
+    const order = await this.commonOrder.expose(
       side,
       this.stopLossRepository.averagePrice,
       this.stopLossRepository.amountQuantity,
@@ -39,6 +32,8 @@ export class StopLossRepositoryCleanerToCommonOrderAdapter extends CommonOrder {
               void this.stopLossRepository.clear();
               binanceWebsocket.removeEventListener('message', handleWebsocketEvent);
             }
+
+            break;
           }
         }
       }
@@ -47,5 +42,9 @@ export class StopLossRepositoryCleanerToCommonOrderAdapter extends CommonOrder {
     binanceWebsocket.addEventListener('message', handleWebsocketEvent);
 
     return order;
+  }
+
+  async cancel(): Promise<void> {
+    return await this.commonOrder.cancel();
   }
 }
