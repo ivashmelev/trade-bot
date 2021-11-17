@@ -39,20 +39,6 @@ export const setIntervalAsync = async (callback: () => Promise<void>, ms: number
   return await handle();
 };
 
-// export const setIntervalAsync = async (
-//   callback: () => Promise<void>,
-//   ms: number,
-//   timeout?: { id: NodeJS.Timeout }
-// ): Promise<{ id: NodeJS.Timeout } | void> => {
-//   await callback();
-//   if (timeout) {
-//     timeout.id = setTimeout(() => setIntervalAsync(callback, ms, timeout), ms);
-//     return timeout;
-//   }
-
-//   setTimeout(() => setIntervalAsync(callback, ms, timeout), ms);
-// };
-
 export const parseExecutionReportEvents = (event: any): ExecutionReportEvent => {
   return {
     eventType: event.e,
