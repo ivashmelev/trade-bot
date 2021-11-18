@@ -13,9 +13,9 @@ import {
 import { getPrice } from '../utils';
 
 export class CommonOrder implements Order {
+  orderResponse: OrderDto | null;
   private symbol: SymbolToken;
   private threshold: Threshold;
-  order?: OrderDto;
 
   constructor(symbol: SymbolToken, threshold: Threshold) {
     this.symbol = symbol;
@@ -38,7 +38,7 @@ export class CommonOrder implements Order {
         } as OrderDtoRequest,
       });
 
-      this.order = response.data;
+      this.orderResponse = response.data;
 
       return response.data;
     } catch (error) {
@@ -50,7 +50,7 @@ export class CommonOrder implements Order {
   async cancel(): Promise<void> {
     try {
       await binanceRestPrivate.delete('/order', {
-        params: { symbol: this.symbol, orderId: this.order?.orderId },
+        params: { symbol: this.symbol, orderId: this.orderResponse?.orderId },
       });
     } catch (error) {
       console.log(new Error('SellOrder error from method cancel'));

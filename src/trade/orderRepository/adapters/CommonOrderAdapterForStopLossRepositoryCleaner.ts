@@ -1,4 +1,3 @@
-import { CommonOrder } from '../../orders';
 import { binanceWebsocket } from '../../../binance';
 import { Order } from '../../interfaces';
 import { StopLossRepository } from '..';
@@ -6,16 +5,18 @@ import { Event, ExecutionReportEvent, OrderDto, OrderStatus, OrderType, Side } f
 import { defineWebsocketEvent } from '../../utils';
 
 export class CommonOrderAdapterForStopLossRepositoryCleaner implements Order {
-  private commonOrder: CommonOrder;
+  private order: Order;
   private stopLossRepository: StopLossRepository;
+  orderResponse: OrderDto | null;
 
-  constructor(commonOrder: CommonOrder, stopLossRepository: StopLossRepository) {
-    this.commonOrder = commonOrder;
+  constructor(order: Order, stopLossRepository: StopLossRepository) {
+    this.order = order;
     this.stopLossRepository = stopLossRepository;
+    this.orderResponse = null;
   }
 
   async expose(side: Side, _price: number, _quantity: string, type: OrderType): Promise<OrderDto> {
-    const order = await this.commonOrder.expose(
+    const order = await this.order.expose(
       side,
       this.stopLossRepository.averagePrice,
       this.stopLossRepository.amountQuantity,
@@ -29,6 +30,7 @@ export class CommonOrderAdapterForStopLossRepositoryCleaner implements Order {
         switch (event.orderStatus) {
           case OrderStatus.Filled: {
             if (order.orderId === event.orderId) {
+              this.orderResponse = null;
               void this.stopLossRepository.clear();
               binanceWebsocket.removeEventListener('message', handleWebsocketEvent);
             }
@@ -41,10 +43,12 @@ export class CommonOrderAdapterForStopLossRepositoryCleaner implements Order {
 
     binanceWebsocket.addEventListener('message', handleWebsocketEvent);
 
+    this.orderResponse = order;
+
     return order;
   }
 
   async cancel(): Promise<void> {
-    return await this.commonOrder.cancel();
+    return await this.order.cancel();
   }
 }

@@ -6,6 +6,7 @@ import { getPrice } from '../utils';
 export class OcoOrder implements Order {
   private symbol: SymbolToken;
   private threshold: Threshold;
+  orderResponse: OrderDto | null;
 
   constructor(symbol: SymbolToken, threshold: Threshold) {
     this.symbol = symbol;
@@ -26,6 +27,8 @@ export class OcoOrder implements Order {
         } as OcoDtoRequest,
       });
 
+      this.orderResponse = response.data.orderReports[0];
+
       return response.data.orderReports[0];
     } catch (error) {
       console.log(new Error('OcoOrder error from method expose'));
@@ -33,14 +36,14 @@ export class OcoOrder implements Order {
     }
   }
 
-  async cancel(order: OrderDto): Promise<void> {
+  async cancel(): Promise<void> {
     try {
       await binanceRestPrivate.delete('/order', {
-        params: { symbol: this.symbol, orderId: order.orderId },
+        params: { symbol: this.symbol, orderId: this.orderResponse?.orderId },
       });
     } catch (error) {
       console.log(new Error('OcoOrder error from method cancel'));
-      return await this.cancel(order);
+      return await this.cancel();
     }
   }
 }
