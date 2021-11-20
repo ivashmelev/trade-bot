@@ -3,7 +3,6 @@ import { StopLossRepository } from '..';
 import { OrderDto, OrderType, Side } from '../../types';
 
 export class CommonOrderAdapterForStopLossRepositorySaver implements Order {
-  orderResponse: OrderDto | null;
   private order: Order;
   private stopLossRepository: StopLossRepository;
 
@@ -11,18 +10,18 @@ export class CommonOrderAdapterForStopLossRepositorySaver implements Order {
     this.order = order;
     this.stopLossRepository = stopLossRepository;
   }
+
   async expose(side: Side, price: number, quantity: string, type: OrderType): Promise<OrderDto> {
     const order = await this.order.expose(side, price, quantity, type);
 
-    this.orderResponse = order;
     return order;
   }
 
-  async cancel(): Promise<void> {
-    await this.order.cancel();
+  async cancel(order: OrderDto): Promise<void> {
+    await this.order.cancel(order);
 
-    if (this.orderResponse?.side === Side.Sell) {
-      await this.stopLossRepository.save(this.orderResponse.price, this.orderResponse.origQty);
+    if (order.side === Side.Sell) {
+      await this.stopLossRepository.save(order.price, order.origQty);
     }
   }
 }

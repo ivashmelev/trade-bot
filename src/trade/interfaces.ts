@@ -1,9 +1,8 @@
 import { OrderDto, OrderType, Side } from './types';
 
 export interface Order {
-  orderResponse: OrderDto | null;
   expose: (side: Side, price: number, quantity: string, type?: OrderType) => Promise<OrderDto>;
-  cancel: () => Promise<void>;
+  cancel: (order: OrderDto) => Promise<void>;
 }
 
 export interface PriceObserver {

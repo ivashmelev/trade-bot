@@ -35,10 +35,12 @@
   "dependencies": {
     "@hapi/sntp": "^4.0.0",
     "@prisma/client": "^2.28.0",
+    "@types/cron": "^1.7.3",
     "axios": "^0.21.1",
     "binance-api-node": "^0.10.47",
     "chalk": "^4.1.1",
     "coinbase-pro-node": "^3.0.5",
+    "cron": "^1.8.2",
     "dotenv": "^9.0.2",
     "express": "^4.17.1",
     "hash.js": "^1.1.7",

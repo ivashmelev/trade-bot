@@ -13,7 +13,6 @@ import {
 import { getPrice } from '../utils';
 
 export class CommonOrder implements Order {
-  orderResponse: OrderDto | null;
   private symbol: SymbolToken;
   private threshold: Threshold;
 
@@ -32,29 +31,26 @@ export class CommonOrder implements Order {
           quantity,
           price: getPrice(this.threshold, side, type, price, false),
           stopPrice: getPrice(this.threshold, side, type, price, true),
-          stopLimitTimeInForce: TimeInForce.Gtc,
           newOrderRespType: OrderResponseType.Result,
           timeInForce: TimeInForce.Gtc,
         } as OrderDtoRequest,
       });
 
-      this.orderResponse = response.data;
-
       return response.data;
     } catch (error) {
-      console.log(new Error('SellOrder error from method cancel'));
-      return await this.expose(side, price, quantity, type);
+      throw new Error('CommonOrder error from method expose');
+      // return await this.expose(side, price, quantity, type);
     }
   }
 
-  async cancel(): Promise<void> {
+  async cancel(order: OrderDto): Promise<void> {
     try {
       await binanceRestPrivate.delete('/order', {
-        params: { symbol: this.symbol, orderId: this.orderResponse?.orderId },
+        params: { symbol: this.symbol, orderId: order.orderId },
       });
     } catch (error) {
-      console.log(new Error('SellOrder error from method cancel'));
-      return await this.cancel();
+      console.log(new Error('CommonOrder error from method cancel'));
+      return await this.cancel(order);
     }
   }
 }
