@@ -1,7 +1,7 @@
+import interval from 'interval-promise';
 import { binanceRestPublic } from '../../binance';
 import { PriceObserver, PricePublisher } from '../interfaces';
 import { SymbolToken } from '../types';
-import { setIntervalAsync } from '../utils';
 
 export class OrderPricePublisher implements PricePublisher {
   private observers: PriceObserver[];
@@ -32,13 +32,14 @@ export class OrderPricePublisher implements PricePublisher {
   }
 
   async startGetPrice(): Promise<void> {
-    await setIntervalAsync(async () => {
+    await interval(async () => {
       try {
         const response = await binanceRestPublic.get<{ symbol: SymbolToken; price: string }>('/ticker/price', {
           params: { symbol: this.symbol },
         });
 
         this.price = Number(response.data.price);
+        console.log(this.price);
         this.notify();
       } catch (error) {
         console.log(new Error('OrderPricePublisher error from method unsubscribe'));

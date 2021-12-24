@@ -1,8 +1,10 @@
 import express from 'express';
 import './env';
-import { initBinanceRest, initBinanceWebsocket } from './binance';
+import { binanceRestPublic, initBinanceRest, initBinanceWebsocket } from './binance';
 import { TradeFacade } from './trade/TradeFacade';
 import { SymbolToken, Threshold } from './trade/types';
+import { CronJob } from 'cron';
+import axios from 'axios';
 
 const app = express();
 const port = 5000;
@@ -28,12 +30,42 @@ app.get('/cancelAll', async (req, res) => {
   res.send(await bot.cancelOrders());
 });
 
-app.listen(port, async () => {
+app.listen(port,  () => {
   try {
-    initBinanceRest();
-    await initBinanceWebsocket();
-    await bot.trade();
-    console.log('Bot is running!');
+    // initBinanceRest();
+    // await initBinanceWebsocket();
+    // await bot.trade();
+    // console.log('Bot is running!');
+    const delay = (ms:number) => {
+      return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+      });
+    }
+
+    const schedule = (cronTime: string, callback: () => Promise<void>) => {
+      const job = new CronJob(cronTime, async () => {
+        job.stop()
+        await callback();
+        job.start()
+      }, null, true)
+
+      return job
+    }
+
+    let response;
+
+    schedule('* * * * * *', async () => {
+      await delay(3000)
+      console.log('get response');
+      response = 'response'
+    })
+
+    schedule('* * * * * *', async () => {
+      await delay(1000)
+      console.log(`use response ${response as string}`);
+      response = undefined
+    })
+
   } catch (error) {
     console.log(error);
     throw error;

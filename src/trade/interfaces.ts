@@ -1,4 +1,4 @@
-import { OrderDto, OrderType, Side } from './types';
+import { OrderDto, OrderStatus, OrderType, Side } from './types';
 
 export interface Order {
   expose: (side: Side, price: number, quantity: string, type?: OrderType) => Promise<OrderDto>;
@@ -19,4 +19,8 @@ export interface OrderRepository {
   save: (price: string, quantity: string) => Promise<void>;
   clear: () => Promise<void>;
   getOrders: () => Promise<void>;
+}
+
+export interface OrderObserver {
+  getOrderStatus: (order: OrderDto) => Promise<OrderStatus>;
 }
