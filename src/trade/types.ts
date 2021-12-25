@@ -37,7 +37,7 @@ type OrderTypeThreshold = Record<OrderType, number>;
 
 export type Threshold = Record<Side, OrderTypeThreshold> & { limit: number };
 
-export interface OrderDto {
+export interface Order {
   clientOrderId: string;
   cummulativeQuoteQty: string;
   executedQty: string;
@@ -68,7 +68,7 @@ enum ListOrderStatus {
   Reject = 'REJECT',
 }
 
-export interface OcoDto {
+export interface Oco {
   orderListId: number;
   contingencyType: 'OCO';
   listStatusType: ListStatusType;
@@ -76,8 +76,8 @@ export interface OcoDto {
   listClientOrderId: string;
   transactionTime: number;
   symbol: string;
-  orders: OrderDto[];
-  orderReports: OrderDto[];
+  orders: Order[];
+  orderReports: Order[];
 }
 
 export enum OrderResponseType {
@@ -86,7 +86,7 @@ export enum OrderResponseType {
   Full = 'FULL',
 }
 
-export interface OcoDtoRequest {
+export interface OcoRequest {
   symbol: SymbolToken;
   listClientOrderId?: string; //A unique Id for the entire orderList
   side: Side;
@@ -102,7 +102,7 @@ export interface OcoDtoRequest {
   newOrderRespType?: OrderResponseType; //	Set the response JSON.
 }
 
-export interface OrderDtoRequest {
+export interface OrderRequest {
   symbol: SymbolToken;
   type: OrderType;
   stopPrice: string;

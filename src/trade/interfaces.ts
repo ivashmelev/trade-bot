@@ -1,26 +1,29 @@
-import { OrderDto, OrderStatus, OrderType, Side } from './types';
+import { Oco, Order, OrderType, Side, SymbolToken } from './types';
 
-export interface Order {
-  expose: (side: Side, price: number, quantity: string, type?: OrderType) => Promise<OrderDto>;
-  cancel: (order: OrderDto) => Promise<void>;
+interface Placer<T> {
+  expose: (side: Side, price: number, quantity: string, type?: OrderType) => Promise<T>;
+  cancel: (order: T) => Promise<void>;
 }
 
-export interface PriceObserver {
-  updatePrice: (pricePublisher: PricePublisher) => void;
+export interface IOrderPlacer extends Placer<Order> {
+  expose: (side: Side, price: number, quantity: string, type: OrderType) => Promise<Order>;
 }
-export interface PricePublisher {
-  price: number;
-  subscribe: (observer: PriceObserver) => void;
-  unsubscribe: (observer: PriceObserver) => void;
-  notify: () => void;
+
+export interface IOcoPlacer extends Placer<Oco> {
+  expose: (side: Side, price: number, quantity: string) => Promise<Oco>;
 }
 
 export interface OrderRepository {
   save: (price: string, quantity: string) => Promise<void>;
   clear: () => Promise<void>;
-  getOrders: () => Promise<void>;
+  getStoredOrders: () => Promise<void>;
 }
 
-export interface OrderObserver {
-  getOrderStatus: (order: OrderDto) => Promise<OrderStatus>;
+export interface IPriceObserver {
+  startGetPrice: (symbol: SymbolToken) => Promise<void>;
+}
+
+export interface IOrderObserver {
+  checkOrder: (order: Order) => Promise<Order>;
+  getOpenOrders: () => Promise<Order[]>;
 }
