@@ -7,16 +7,16 @@ import {
   CommonOrderAdapterForStopLossRepositorySaver,
   StopLossRepository,
 } from './orderRepository';
-import { CommonOrder, OcoOrder } from './orders';
+import { OrderPlacer, OcoPlacer } from './placers';
 import { OrderObserver } from './orderObserver';
 import { CommonOrderAdapterForCancelingOrder, OrderPriceObserver, OrderPricePublisher } from './priceObserver';
-import { OrderDto, OrderStatus, OrderType, Side, SymbolToken, Threshold } from './types';
+import { Order, OrderStatus, OrderType, Side, SymbolToken, Threshold } from './types';
 import interval from 'interval-promise';
 
 export class TradeFacade {
   private orderPricePublisher: OrderPricePublisher;
   private orderPriceObserver: OrderPriceObserver;
-  private ocoOrder: OcoOrder;
+  private ocoOrder: OcoPlacer;
   private sellOrder: Order;
   private stopLossOrder: Order;
   private stopLossRepository: StopLossRepository;
@@ -24,7 +24,7 @@ export class TradeFacade {
   private deposit: number;
   private symbol: SymbolToken;
   private orderObserver: OrderObserver;
-  private activeOrder: OrderDto;
+  private activeOrder: Order;
 
   constructor(symbol: SymbolToken, threshold: Threshold, deposit: number) {
     this.orderPricePublisher = new OrderPricePublisher(symbol);
@@ -32,17 +32,17 @@ export class TradeFacade {
     this.stopLossRepository = new StopLossRepository();
     this.orderObserver = new OrderObserver(symbol);
     this.symbol = symbol;
-    this.ocoOrder = new OcoOrder(symbol, threshold);
+    this.ocoOrder = new OcoPlacer(symbol, threshold);
 
     this.sellOrder = new CommonOrderAdapterForCancelingOrder(
-      new CommonOrderAdapterForStopLossRepositorySaver(new CommonOrder(symbol, threshold), this.stopLossRepository),
+      new CommonOrderAdapterForStopLossRepositorySaver(new OrderPlacer(symbol, threshold), this.stopLossRepository),
       this.orderPriceObserver,
       threshold
     );
 
     this.stopLossOrder = new CommonOrderAdapterForCancelingOrder(
       new CommonOrderAdapterForStopLossRepositoryCleaner(
-        new CommonOrder(symbol, threshold),
+        new OrderPlacer(symbol, threshold),
         this.stopLossRepository,
         this.orderObserver
       ),
@@ -58,7 +58,7 @@ export class TradeFacade {
 
   async trade(): Promise<void> {
     await this.orderPricePublisher.startGetPrice();
-    await this.stopLossRepository.getOrders();
+    await this.stopLossRepository.getStoredOrders();
     // await this.ocoOrder.expose(Side.Buy, this.orderPriceObserver.price, this.quantity);
 
     if (this.orderPriceObserver.price) {
