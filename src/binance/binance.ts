@@ -11,26 +11,61 @@ const url = `${process.env.BINANCE_API_URL as string}/api/v3`;
 
 export const initBinanceRest = (): void => {
   try {
+    binanceRestPublic = axios.create({
+      baseURL: url,
+      headers: {
+        'X-MBX-APIKEY': process.env.BINANCE_API_KEY,
+      },
+    });
+
+    // binanceRestPublic.interceptors.request.use(
+    //   (config) => {
+    //     return config;
+    //   },
+    //   (error: AxiosError) => {
+    //     console.log(error);
+    //
+    //     return Promise.reject(error);
+    //   }
+    // );
+    //
+    // binanceRestPublic.interceptors.response.use(
+    //   (config) => {
+    //     return config;
+    //   },
+    //   (error: AxiosError) => {
+    //     console.log(error);
+    //
+    //     return Promise.reject(error);
+    //   }
+    // );
+
     binanceRestPrivate = axios.create({
       baseURL: url,
       headers: {
         'X-MBX-APIKEY': process.env.BINANCE_API_KEY,
       },
       params: {
-        recvWindow: 60000,
+        recvWindow: 5000,
       },
     });
 
-    binanceRestPrivate.interceptors.request.use(async (config) => {
-      const timeResponse = await axios.get<{ serverTime: string }>(`${url}/time`);
+    binanceRestPrivate.interceptors.request.use(
+      async (config) => {
+        const timeResponse = await binanceRestPublic.get<{ serverTime: string }>('/time');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        config.params.timestamp = timeResponse.data.serverTime;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        config.params.signature = getSignature(config.params);
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      config.params.timestamp = timeResponse.data.serverTime;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      config.params.signature = getSignature(config.params);
+        return config;
+      },
+      (error: AxiosError) => {
+        console.log(error.config.url, error.code, error.response?.statusText);
 
-      return config;
-    });
+        return Promise.reject(error);
+      }
+    );
 
     binanceRestPrivate.interceptors.response.use(undefined, (error: AxiosError) => {
       console.log(
@@ -42,13 +77,6 @@ export const initBinanceRest = (): void => {
       );
 
       return Promise.reject(error);
-    });
-
-    binanceRestPublic = axios.create({
-      baseURL: url,
-      headers: {
-        'X-MBX-APIKEY': process.env.BINANCE_API_KEY,
-      },
     });
   } catch (error) {
     console.log(error);

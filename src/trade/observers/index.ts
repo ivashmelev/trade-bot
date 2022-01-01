@@ -1,2 +1,2 @@
 export * from './PriceObserver';
-export * from './OrderObserver';
+export * from '../checkers/OrderChecker';

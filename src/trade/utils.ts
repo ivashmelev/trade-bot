@@ -26,12 +26,14 @@ export const getPrice = (
   }
   return calcValueByPercentage(price, percentage).toFixed(2);
 };
-// https://codesandbox.io/s/happy-violet-4d60m?file=/src/index.js
-export const setIntervalAsync = async (callback: () => Promise<void>, ms: number, timeout?: { id: NodeJS.Timeout }) => {
-  const handle = async (): Promise<void> => {
-    await callback();
 
-    setTimeout(() => handle(), ms);
+export const setIntervalAsync = async (callback: () => Promise<void>, ms: number): Promise<{ id: NodeJS.Timeout }> => {
+  const timeout = { id: undefined as unknown as NodeJS.Timeout };
+
+  const handle = async (): Promise<{ id: NodeJS.Timeout }> => {
+    await callback();
+    timeout.id = setTimeout(() => handle(), ms);
+    return timeout;
   };
 
   return await handle();

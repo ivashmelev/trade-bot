@@ -5,6 +5,10 @@ interface Placer<T> {
   cancel: (order: T) => Promise<void>;
 }
 
+export interface Checker<T> {
+  check: (arg: T) => Promise<T>;
+}
+
 export interface IOrderPlacer extends Placer<Order> {
   expose: (side: Side, price: number, quantity: string, type: OrderType) => Promise<Order>;
 }
@@ -21,9 +25,4 @@ export interface OrderRepository {
 
 export interface IPriceObserver {
   startGetPrice: (symbol: SymbolToken) => Promise<void>;
-}
-
-export interface IOrderObserver {
-  checkOrder: (order: Order) => Promise<Order>;
-  getOpenOrders: () => Promise<Order[]>;
 }

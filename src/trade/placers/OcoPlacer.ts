@@ -29,7 +29,8 @@ export class OcoPlacer implements IOcoPlacer {
       return response.data;
     } catch (error) {
       console.log(new Error('OcoPlacer error from method expose'));
-      return await this.expose(side, price, quantity);
+      // return await this.expose(side, price, quantity);
+      throw error;
     }
   }
 
@@ -40,7 +41,8 @@ export class OcoPlacer implements IOcoPlacer {
       });
     } catch (error) {
       console.log(new Error('OcoPlacer error from method cancel'));
-      return await this.cancel(oco);
+      // return await this.cancel(oco);
+      throw error;
     }
   }
 }

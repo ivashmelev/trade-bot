@@ -44,7 +44,6 @@
     "dotenv": "^9.0.2",
     "express": "^4.17.1",
     "hash.js": "^1.1.7",
-    "interval-promise": "^1.4.0",
     "jest": "^27.0.6",
     "moment": "^2.29.1",
     "npx": "^10.2.2",
