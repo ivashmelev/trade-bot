@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ExecutionReportEvent, OrderType, Side, Threshold, Event } from './types';
+import { ExecutionReportEvent, OrderType, Side, Threshold, Event, MiniTicker } from './types';
 
 export const calcValueByPercentage = (value: number, percentage: number): number => {
   return value + value * (percentage / 100);
@@ -40,39 +40,37 @@ export const setIntervalAsync = async (callback: () => Promise<void>, ms: number
 };
 
 export const parseExecutionReportEvents = (event: any): ExecutionReportEvent => {
-  const payload = JSON.parse(event.data);
-
   return {
-    eventType: payload.e,
-    eventTime: payload.E,
-    symbol: payload.s,
-    newClientOrderId: payload.c,
-    originalClientOrderId: payload.C,
-    side: payload.S,
-    orderType: payload.o,
-    timeInForce: payload.f,
-    quantity: payload.q,
-    price: payload.p,
-    executionType: payload.x,
-    stopPrice: payload.P,
-    icebergQuantity: payload.F,
-    orderStatus: payload.X,
-    orderRejectReason: payload.r,
-    orderId: payload.i,
-    orderTime: payload.T,
-    lastTradeQuantity: payload.l,
-    totalTradeQuantity: payload.z,
-    priceLastTrade: payload.L,
-    commission: payload.n,
-    commissionAsset: payload.N,
-    tradeId: payload.t,
-    isOrderWorking: payload.w,
-    isBuyerMaker: payload.m,
-    creationTime: payload.O,
-    totalQuoteTradeQuantity: payload.Z,
-    orderListId: payload.g,
-    quoteOrderQuantity: payload.Q,
-    lastQuoteTransacted: payload.Y,
+    eventType: event.e,
+    eventTime: event.E,
+    symbol: event.s,
+    newClientOrderId: event.c,
+    originalClientOrderId: event.C,
+    side: event.S,
+    orderType: event.o,
+    timeInForce: event.f,
+    quantity: event.q,
+    price: event.p,
+    executionType: event.x,
+    stopPrice: event.P,
+    icebergQuantity: event.F,
+    orderStatus: event.X,
+    orderRejectReason: event.r,
+    orderId: event.i,
+    orderTime: event.T,
+    lastTradeQuantity: event.l,
+    totalTradeQuantity: event.z,
+    priceLastTrade: event.L,
+    commission: event.n,
+    commissionAsset: event.N,
+    tradeId: event.t,
+    isOrderWorking: event.w,
+    isBuyerMaker: event.m,
+    creationTime: event.O,
+    totalQuoteTradeQuantity: event.Z,
+    orderListId: event.g,
+    quoteOrderQuantity: event.Q,
+    lastQuoteTransacted: event.Y,
   };
 };
 
@@ -86,3 +84,24 @@ export const defineWebsocketEvent = (event: any) => {
       return event;
   }
 };
+
+export const parseMiniTicker = (event: any): MiniTicker => {
+  const payload = JSON.parse(event);
+
+  return {
+    eventType: '24hrMiniTicker',
+    eventTime: payload.E,
+    symbol: payload.s,
+    closePrice: payload.c,
+    openPrice: payload.o,
+    highPrice: payload.h,
+    lowPrice: payload.l,
+    volume: payload.v,
+    volumeQuote: payload.q,
+  };
+};
+
+export const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(() => resolve(), ms);
+  });

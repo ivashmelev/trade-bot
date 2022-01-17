@@ -1,7 +1,8 @@
-import { binanceRestPrivate } from '../../binance';
+import { binanceRestPrivate, binanceRestPublic } from '../../binance';
 import { IOcoPlacer } from '../interfaces';
-import { Oco, OcoRequest, OrderType, Side, SymbolToken, Threshold, TimeInForce } from '../types';
+import { Oco, OcoRequest, OrderResponseError, OrderType, Side, SymbolToken, Threshold, TimeInForce } from '../types';
 import { getPrice } from '../utils';
+import { AxiosError } from 'axios';
 
 export class OcoPlacer implements IOcoPlacer {
   private readonly symbol: SymbolToken;
@@ -12,7 +13,7 @@ export class OcoPlacer implements IOcoPlacer {
     this.threshold = threshold;
   }
 
-  async expose(side: Side, price: number, quantity: string): Promise<Oco> {
+  async place(side: Side, price: number, quantity: string): Promise<Oco> {
     try {
       const response = await binanceRestPrivate.post<Oco>('/order/oco', null, {
         params: {
@@ -27,10 +28,21 @@ export class OcoPlacer implements IOcoPlacer {
       });
 
       return response.data;
-    } catch (error) {
-      console.log(new Error('OcoPlacer error from method expose'));
-      // return await this.expose(side, price, quantity);
-      throw error;
+    } catch (e) {
+      const error = e as AxiosError<OrderResponseError>;
+      console.log(new Error('OcoPlacer error from method place'));
+
+      if (error.response?.data.code === -2010) {
+        const response = await binanceRestPublic.get<{ price: string }>('/ticker/price', {
+          params: {
+            symbol: this.symbol,
+          },
+        });
+        const price = Number(response.data.price);
+        return await this.place(side, price, quantity);
+      } else {
+        throw error;
+      }
     }
   }
 

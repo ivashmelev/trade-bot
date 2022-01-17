@@ -1,6 +1,5 @@
 import express from 'express';
 import './env';
-import { initBinanceRest, initBinanceWebsocket } from './binance';
 import { Trade } from './trade/Trade';
 import { SymbolToken, Threshold } from './trade/types';
 
@@ -28,11 +27,13 @@ app.get('/cancelAll', async (req, res) => {
   res.send(await bot.cancelOrders());
 });
 
+app.get('/exchangeInfo', async (req, res) => {
+  res.send(await bot.getExchangeInfo());
+});
+
 app.listen(port, async () => {
   try {
     console.log('Bot is running!');
-    initBinanceRest();
-    // await initBinanceWebsocket();
     await bot.trade();
   } catch (error) {
     console.log(error);

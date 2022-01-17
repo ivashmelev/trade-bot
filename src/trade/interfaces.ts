@@ -1,7 +1,7 @@
 import { Oco, Order, OrderType, Side, SymbolToken } from './types';
 
 interface Placer<T> {
-  expose: (side: Side, price: number, quantity: string, type?: OrderType) => Promise<T>;
+  place: (side: Side, price: number, quantity: string, type?: OrderType) => Promise<T>;
   cancel: (order: T) => Promise<void>;
 }
 
@@ -10,11 +10,11 @@ export interface Checker<T> {
 }
 
 export interface IOrderPlacer extends Placer<Order> {
-  expose: (side: Side, price: number, quantity: string, type: OrderType) => Promise<Order>;
+  place: (side: Side, price: number, quantity: string, type: OrderType) => Promise<Order>;
 }
 
 export interface IOcoPlacer extends Placer<Oco> {
-  expose: (side: Side, price: number, quantity: string) => Promise<Oco>;
+  place: (side: Side, price: number, quantity: string) => Promise<Oco>;
 }
 
 export interface OrderRepository {
@@ -24,5 +24,5 @@ export interface OrderRepository {
 }
 
 export interface IPriceObserver {
-  startGetPrice: (symbol: SymbolToken) => Promise<void>;
+  startGetPrice: (symbol: SymbolToken) => void;
 }

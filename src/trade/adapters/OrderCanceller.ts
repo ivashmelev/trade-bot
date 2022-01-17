@@ -1,47 +1,61 @@
 import { Order, OrderType, Side, Threshold } from '../types';
-import { calcValueByPercentage, setIntervalAsync } from '../utils';
+import { calcValueByPercentage } from '../utils';
 import { IOrderPlacer } from '../interfaces';
 import { PriceObserver } from '../observers';
+import { CronJob } from 'cron';
 
 export class OrderCanceller implements IOrderPlacer {
   private orderPlacer: IOrderPlacer;
   private priceObserver: PriceObserver;
   private threshold: Threshold;
-  private timeout: { id: NodeJS.Timeout };
+  private activeOrder: Order | null;
+  private job: CronJob;
+  private stopLossPrice: number | null;
 
   constructor(orderPlacer: IOrderPlacer, priceObserver: PriceObserver, threshold: Threshold) {
     this.priceObserver = priceObserver;
     this.threshold = threshold;
     this.orderPlacer = orderPlacer;
+    this.activeOrder = null;
+    this.stopLossPrice = null;
+    this.job = this.createCancelingJob();
   }
 
-  async expose(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
-    const order = await this.orderPlacer.expose(side, price, quantity, type);
-
-    this.timeout = await setIntervalAsync(async () => await this.handleCancelingOrder(order), 1000);
-
-    return order;
+  async place(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
+    this.activeOrder = await this.orderPlacer.place(side, price, quantity, type);
+    this.stopLossPrice = calcValueByPercentage(price, this.threshold[this.activeOrder.side].STOP_LOSS_LIMIT);
+    console.log(`stopLossPrice: ${this.stopLossPrice}`);
+    this.job.start();
+    return this.activeOrder;
   }
 
   async cancel(order: Order): Promise<void> {
-    return await this.orderPlacer.cancel(order);
+    try {
+      this.job.stop();
+      const result = await this.orderPlacer.cancel(order);
+      this.activeOrder = null;
+      return result;
+    } catch {
+      this.job.start();
+    }
   }
 
-  private async handleCancelingOrder(order: Order): Promise<void> {
-    const stopLossPrice = calcValueByPercentage(Number(order.price), this.threshold[order.side].STOP_LOSS_LIMIT);
-
-    if (this.priceObserver.price) {
-      if (order.side === Side.Buy) {
-        if (this.priceObserver.price >= stopLossPrice) {
-          clearTimeout(this.timeout.id);
-          await this.cancel(order);
-        }
-      } else {
-        if (this.priceObserver.price <= stopLossPrice) {
-          clearTimeout(this.timeout.id);
-          await this.cancel(order);
+  private createCancelingJob() {
+    return new CronJob('* * * * * *', async () => {
+      if (this.activeOrder && this.priceObserver.price && this.stopLossPrice) {
+        if (this.activeOrder.side === Side.Buy) {
+          if (this.priceObserver.price >= this.stopLossPrice) {
+            await this.cancel(this.activeOrder);
+          }
+        } else {
+          if (this.priceObserver.price <= this.stopLossPrice) {
+            console.log(
+              `currentPrice: ${this.priceObserver.price}, activeOrder: ${this.activeOrder.price}, stopLossPrice: ${this.stopLossPrice}`
+            );
+            await this.cancel(this.activeOrder);
+          }
         }
       }
-    }
+    });
   }
 }

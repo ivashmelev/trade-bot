@@ -11,8 +11,8 @@ export class StopLossOrderSaver implements IOrderPlacer {
     this.stopLossRepository = stopLossRepository;
   }
 
-  async expose(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
-    return await this.orderPlacer.expose(side, price, quantity, type);
+  async place(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
+    return await this.orderPlacer.place(side, price, quantity, type);
   }
 
   async cancel(order: Order): Promise<void> {

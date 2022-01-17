@@ -1,40 +1,44 @@
-import { Order, OrderStatus, OrderType, Side } from '../types';
+import { ExecutionReportEvent, Order, OrderStatus, OrderType, Side } from '../types';
 import { IOrderPlacer } from '../interfaces';
 import { OrderPlacer } from '../placers';
 import { StopLossRepository } from '../repositories';
-import { OrderChecker } from '../observers';
-import { setIntervalAsync } from '../utils';
+import { defineWebsocketEvent } from '../utils';
+import { binanceWebsocket } from '../../binance';
 
 export class StopLossOrderCleaner implements IOrderPlacer {
   private orderPlacer: IOrderPlacer;
   private stopLossRepository: StopLossRepository;
-  private orderChecker: OrderChecker;
-  private timeout: { id: NodeJS.Timeout };
+  private activeOrder: Order | null;
 
-  constructor(orderPlacer: OrderPlacer, stopLossRepository: StopLossRepository, orderChecker: OrderChecker) {
+  constructor(orderPlacer: OrderPlacer, stopLossRepository: StopLossRepository) {
     this.orderPlacer = orderPlacer;
     this.stopLossRepository = stopLossRepository;
-    this.orderChecker = orderChecker;
+    this.activeOrder = null;
   }
 
-  async expose(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
-    const order = await this.orderPlacer.expose(side, price, quantity, type);
-
-    this.timeout = await setIntervalAsync(async () => await this.handleClearingStopLossRepository(order), 1000);
-
-    return order;
+  async place(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
+    this.activeOrder = await this.orderPlacer.place(side, price, quantity, type);
+    binanceWebsocket.addEventListener('message', this.orderStatusListener.bind(this));
+    return this.activeOrder;
   }
 
   async cancel(order: Order): Promise<void> {
     return await this.orderPlacer.cancel(order);
   }
 
-  private async handleClearingStopLossRepository(order: Order): Promise<void> {
-    const { status } = await this.orderChecker.check(order);
-
-    if (status === OrderStatus.Filled) {
-      await this.stopLossRepository.clear();
-      clearTimeout(this.timeout.id);
+  private orderStatusListener(event: MessageEvent) {
+    const payload = defineWebsocketEvent(JSON.parse(event.data)) as ExecutionReportEvent;
+    switch (payload.orderStatus) {
+      case OrderStatus.Filled: {
+        void this.stopLossRepository.clear();
+        binanceWebsocket.removeEventListener('message', this.orderStatusListener.bind(this));
+        break;
+      }
+      case OrderStatus.Canceled:
+      case OrderStatus.Expired: {
+        binanceWebsocket.removeEventListener('message', this.orderStatusListener.bind(this));
+        break;
+      }
     }
   }
 }

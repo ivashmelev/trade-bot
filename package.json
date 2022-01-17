@@ -36,6 +36,7 @@
     "@hapi/sntp": "^4.0.0",
     "@prisma/client": "^2.28.0",
     "@types/cron": "^1.7.3",
+    "@types/system-sleep": "^1.3.0",
     "axios": "^0.21.1",
     "binance-api-node": "^0.10.47",
     "chalk": "^4.1.1",
@@ -48,7 +49,9 @@
     "moment": "^2.29.1",
     "npx": "^10.2.2",
     "prisma": "^2.28.0",
+    "qs": "^6.10.2",
     "reconnecting-websocket": "^4.4.0",
+    "system-sleep": "^1.3.7",
     "ts-node": "^9.1.1",
     "ws": "^7.5.0"
   }

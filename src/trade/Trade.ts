@@ -1,13 +1,20 @@
-import { Order, OrderStatus, OrderType, Side, SymbolToken, Threshold } from './types';
-import { OrderChecker, PriceObserver } from './observers';
+import { ExecutionReportEvent, Order, OrderStatus, OrderType, Side, SymbolToken, Threshold } from './types';
+import { PriceObserver } from './observers';
 import { StopLossRepository } from './repositories';
 import { OcoPlacer, OrderPlacer } from './placers';
-import { setIntervalAsync } from './utils';
+import { defineWebsocketEvent } from './utils';
 import chalk from 'chalk';
 import moment from 'moment';
-import { OrderCanceller, StopLossOrderSaver } from './adapters';
+import { OrderCanceller, StopLossOrderCleaner, StopLossOrderSaver } from './adapters';
 import { IOrderPlacer } from './interfaces';
-import { binanceRestPrivate } from '../binance';
+import {
+  binanceRestPrivate,
+  binanceRestPublic,
+  binanceWebsocket,
+  initBinanceRest,
+  initBinanceWebsocket,
+} from '../binance';
+import { CronJob } from 'cron';
 
 export class Trade {
   private readonly symbol: SymbolToken;
@@ -16,10 +23,9 @@ export class Trade {
   private readonly priceObserver: PriceObserver;
   private readonly stopLossRepository: StopLossRepository;
   private ocoPlacer: OcoPlacer;
-  private activeOrder: Order | null;
   private sellOrderPlacer: IOrderPlacer;
+  private sellStopLossOrderPlacer: IOrderPlacer;
   private side: Side;
-  private orderChecker: OrderChecker;
 
   constructor(symbol: SymbolToken, threshold: Threshold, deposit: number) {
     this.symbol = symbol;
@@ -28,107 +34,181 @@ export class Trade {
     this.priceObserver = new PriceObserver(symbol);
     this.stopLossRepository = new StopLossRepository();
     this.ocoPlacer = new OcoPlacer(symbol, threshold);
-    this.activeOrder = null;
+
     this.sellOrderPlacer = new OrderCanceller(
       new StopLossOrderSaver(new OrderPlacer(symbol, threshold), this.stopLossRepository),
       this.priceObserver,
       threshold
     );
+
+    this.sellStopLossOrderPlacer = new OrderCanceller(
+      new StopLossOrderCleaner(new OrderPlacer(symbol, threshold), this.stopLossRepository),
+      this.priceObserver,
+      threshold
+    );
+
     this.side = Side.Buy;
-    this.orderChecker = new OrderChecker(symbol);
   }
 
   async trade(): Promise<void> {
+    await this.initialization();
+    await this.mainThread();
+    await this.stopLossThread();
+  }
+
+  private async initialization() {
+    initBinanceRest();
+    await initBinanceWebsocket();
     await this.priceObserver.startGetPrice();
     await this.stopLossRepository.getStoredOrders();
-
-    // if (this.priceObserver.price) {
-    //   const oco = await this.ocoPlacer.expose(Side.Buy, this.priceObserver.price, this.quantity);
-    //   this.activeOrder = oco.orders[0];
-    //   //
-    //   //   const order = await this.sellOrderPlacer.expose(
-    //   //     Side.Sell,
-    //   //     this.priceObserver.price,
-    //   //     this.quantity,
-    //   //     OrderType.TakeProfitLimit
-    //   //   );
-    //   //
-    //   //   this.activeOrder = order;
-    //   //
-    //   //   this.side = Side.Sell;
-    // }
-    // //
-    // await setIntervalAsync(async () => {
-    //   if (this.activeOrder) {
-    //     const order = await this.orderChecker.check(this.activeOrder);
-    //     await this.pipeline(order);
-    //   }
-    // }, 1000);
   }
 
-  private get quantity(): string {
-    if (this.priceObserver.price) {
-      const quantityStr = String(this.deposit / this.priceObserver.price);
-      return quantityStr.slice(0, quantityStr.lastIndexOf('.') + 6);
-    }
+  private async mainThread() {
+    let orderId: Order['orderId'] | null = null;
 
-    return '0';
-  }
+    const buyOrSell = async () => {
+      if (this.priceObserver.price) {
+        const getQuantity = (price: number) => {
+          const quantityStr = String(this.deposit / price);
+          return quantityStr.slice(0, quantityStr.lastIndexOf('.') + 6);
+        };
 
-  private async pipeline(order: Order) {
-    if (this.activeOrder) {
-      switch (order.status) {
-        case OrderStatus.New: {
-          console.log(
-            chalk.bgBlue(`${moment().format('HH:mm:ss.SSS')}: ${order.status} ${order.side} ${order.orderId}`)
-          );
-          this.activeOrder = order;
-          break;
+        const quantity = getQuantity(this.priceObserver.price);
+
+        if (this.side === Side.Buy) {
+          await this.ocoPlacer.place(Side.Buy, this.priceObserver.price, quantity);
+          // await this.sellOrderPlacer.place(Side.Sell, this.priceObserver.price, quantity, OrderType.TakeProfitLimit);
+        } else if (this.side === Side.Sell) {
+          await this.sellOrderPlacer.place(Side.Sell, this.priceObserver.price, quantity, OrderType.TakeProfitLimit);
         }
-        case OrderStatus.Filled: {
-          console.log(
-            chalk.bgGreen(`${moment().format('HH:mm:ss.SSS')}: ${order.status} ${order.side} ${order.orderId}`)
-          );
-          this.activeOrder = null;
-          await this.buyOrSell();
-          break;
-        }
-        case OrderStatus.Canceled:
-        case OrderStatus.Expired: {
-          console.log(
-            chalk.bgRed(`${moment().format('HH:mm:ss.SSS')}: ${order.status} ${order.side} ${order.orderId}`)
-          );
-          this.activeOrder = null;
-          await this.buyOrSell();
-          break;
-        }
+
+        this.side = this.side === Side.Buy ? Side.Sell : Side.Buy;
       }
-    }
+    };
+
+    const orderStatusListener = (event: MessageEvent) => {
+      void (async () => {
+        const payload = defineWebsocketEvent(JSON.parse(event.data)) as ExecutionReportEvent;
+
+        switch (payload.orderStatus) {
+          case OrderStatus.New: {
+            if (orderId === null) {
+              orderId = payload.orderId;
+              console.log(
+                chalk.bgBlue(
+                  `${moment().format('HH:mm:ss.SSS')} [MT]: ${payload.orderStatus} ${payload.side} ${payload.orderId}`
+                )
+              );
+            }
+            break;
+          }
+          case OrderStatus.Filled: {
+            if (orderId === payload.orderId) {
+              console.log(
+                chalk.bgGreen(
+                  `${moment().format('HH:mm:ss.SSS')} [MT]: ${payload.orderStatus} ${payload.side} ${payload.orderId}`
+                )
+              );
+              orderId = null;
+              await buyOrSell();
+            }
+            break;
+          }
+          case OrderStatus.Canceled:
+          case OrderStatus.Expired: {
+            if (orderId === payload.orderId) {
+              console.log(
+                chalk.bgRed(
+                  `${moment().format('HH:mm:ss.SSS')} [MT]: ${payload.orderStatus} ${payload.side} ${payload.orderId}`
+                )
+              );
+              orderId = null;
+              await buyOrSell();
+            }
+            break;
+          }
+        }
+      })();
+    };
+
+    binanceWebsocket.addEventListener('message', orderStatusListener);
+
+    await buyOrSell();
   }
 
-  private async buyOrSell() {
-    if (this.priceObserver.price) {
-      //   if (this.side === Side.Buy) {
-      const oco = await this.ocoPlacer.expose(Side.Buy, this.priceObserver.price, this.quantity);
-      this.activeOrder = oco.orders[0];
-      //   } else if (this.side === Side.Sell) {
-      //     this.activeOrder = await this.sellOrderPlacer.expose(
-      //       Side.Sell,
-      //       this.priceObserver.price,
-      //       this.quantity,
-      //       OrderType.TakeProfitLimit
-      //     );
-      //   }
+  private stopLossThread(): Promise<void> {
+    return new Promise((resolve) => {
+      let orderId: Order['orderId'] | null = null;
 
-      // this.activeOrder = await this.sellOrderPlacer.expose(
-      //   Side.Sell,
-      //   this.priceObserver.price,
-      //   this.quantity,
-      //   OrderType.TakeProfitLimit
-      // );
+      const job = new CronJob(
+        '* * * * * *',
+        async () => {
+          if (this.priceObserver.price && this.priceObserver.price >= this.stopLossRepository.averagePrice) {
+            try {
+              job.stop();
 
-      this.side = this.side === Side.Buy ? Side.Sell : Side.Buy;
-    }
+              binanceWebsocket.addEventListener('message', orderStatusListener);
+
+              await this.sellStopLossOrderPlacer.place(
+                Side.Sell,
+                this.stopLossRepository.averagePrice,
+                this.stopLossRepository.amountQuantity,
+                OrderType.TakeProfitLimit
+              );
+            } catch (e) {
+              job.start();
+            }
+          }
+        },
+        null,
+        true
+      );
+
+      const orderStatusListener = (event: MessageEvent) => {
+        const payload = defineWebsocketEvent(JSON.parse(event.data)) as ExecutionReportEvent;
+
+        switch (payload.orderStatus) {
+          case OrderStatus.New: {
+            if (orderId === null) {
+              orderId = payload.orderId;
+              console.log(
+                chalk.bgBlue(
+                  `${moment().format('HH:mm:ss.SSS')} [SLT]: ${payload.orderStatus} ${payload.side} ${payload.orderId}`
+                )
+              );
+            }
+            break;
+          }
+          case OrderStatus.Filled: {
+            if (payload.orderId === orderId) {
+              binanceWebsocket.removeEventListener('message', orderStatusListener);
+              job.start();
+              console.log(
+                chalk.bgGreen(
+                  `${moment().format('HH:mm:ss.SSS')} [SLT]: ${payload.orderStatus} ${payload.side} ${payload.orderId}`
+                )
+              );
+            }
+            break;
+          }
+          case OrderStatus.Canceled:
+          case OrderStatus.Expired: {
+            if (payload.orderId === orderId) {
+              binanceWebsocket.removeEventListener('message', orderStatusListener);
+              job.start();
+              console.log(
+                chalk.bgRed(
+                  `${moment().format('HH:mm:ss.SSS')} [SLT]: ${payload.orderStatus} ${payload.side} ${payload.orderId}`
+                )
+              );
+            }
+            break;
+          }
+        }
+      };
+
+      resolve();
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -143,6 +223,13 @@ export class Trade {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getOpenOrders(): Promise<any> {
     const response = await binanceRestPrivate.get('/openOrders', { params: { symbol: this.symbol } });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return response.data;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getExchangeInfo(): Promise<any> {
+    const response = await binanceRestPublic.get('/exchangeInfo', { params: { symbol: this.symbol } });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
   }

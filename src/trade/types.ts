@@ -161,3 +161,20 @@ export interface ExecutionReportEvent {
   totalTradeQuantity: string; // Cumulative filled quantity
   tradeId: number; // Trade ID
 }
+
+export interface MiniTicker {
+  eventType: '24hrMiniTicker';
+  eventTime: number;
+  symbol: SymbolToken;
+  closePrice: string;
+  openPrice: string;
+  highPrice: string;
+  lowPrice: string;
+  volume: string;
+  volumeQuote: string;
+}
+
+export interface OrderResponseError {
+  code: number;
+  msg: string;
+}
