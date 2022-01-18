@@ -5,10 +5,6 @@ interface Placer<T> {
   cancel: (order: T) => Promise<void>;
 }
 
-export interface Checker<T> {
-  check: (arg: T) => Promise<T>;
-}
-
 export interface IOrderPlacer extends Placer<Order> {
   place: (side: Side, price: number, quantity: string, type: OrderType) => Promise<Order>;
 }

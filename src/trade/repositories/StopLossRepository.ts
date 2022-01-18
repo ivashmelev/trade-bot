@@ -34,8 +34,6 @@ export class StopLossRepository implements OrderRepository {
     } catch (error) {
       console.log('StopLossRepository error from method getOrders');
       throw error;
-
-      // return await this.getStoredOrders();
     }
   }
 
@@ -45,7 +43,6 @@ export class StopLossRepository implements OrderRepository {
       this.orders.push({ price, quantity });
     } catch (error) {
       console.log('StopLossRepository error from method save');
-      // return await this.save(price, quantity);
       throw error;
     }
   }
@@ -56,7 +53,6 @@ export class StopLossRepository implements OrderRepository {
       this.orders = [];
     } catch (error) {
       console.log('StopLossRepository error from method clear');
-      // return await this.clear();
       throw error;
     }
   }

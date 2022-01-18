@@ -5,7 +5,7 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 import { getSignature } from './utils';
 import WebSocket from 'ws';
 import { CronJob } from 'cron';
-import { BinanceTimer } from './supporting';
+import { BinanceTimer } from './BinanceTimer';
 import { delay } from '../trade/utils';
 
 export let binanceRestPrivate: AxiosInstance;

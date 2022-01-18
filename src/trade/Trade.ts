@@ -77,7 +77,6 @@ export class Trade {
 
         if (this.side === Side.Buy) {
           await this.ocoPlacer.place(Side.Buy, this.priceObserver.price, quantity);
-          // await this.sellOrderPlacer.place(Side.Sell, this.priceObserver.price, quantity, OrderType.TakeProfitLimit);
         } else if (this.side === Side.Sell) {
           await this.sellOrderPlacer.place(Side.Sell, this.priceObserver.price, quantity, OrderType.TakeProfitLimit);
         }

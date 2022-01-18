@@ -7,14 +7,14 @@ const app = express();
 const port = 5000;
 const threshold: Threshold = {
   BUY: {
-    TAKE_PROFIT_LIMIT: -0.2,
-    STOP_LOSS_LIMIT: 0.2,
+    TAKE_PROFIT_LIMIT: -1,
+    STOP_LOSS_LIMIT: 2,
   },
   SELL: {
-    TAKE_PROFIT_LIMIT: 0.2,
-    STOP_LOSS_LIMIT: -0.2,
+    TAKE_PROFIT_LIMIT: 1,
+    STOP_LOSS_LIMIT: -2,
   },
-  limit: 0.05,
+  limit: 0.1,
 };
 
 const bot = new Trade(SymbolToken.Btcusdt, threshold, 100);

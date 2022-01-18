@@ -16,39 +16,6 @@ export class PriceObserver implements IPriceObserver {
 
   async startGetPrice(): Promise<void> {
     return new Promise((resolve) => {
-      // const ws = new ReconnectingWebSocket(
-      //   `${process.env.BINANCE_WS_URL as string}/${this.symbol.toLowerCase()}@miniTicker`,
-      //   [],
-      //   {
-      //     WebSocket,
-      //   }
-      // );
-      //
-      // ws.addEventListener('message', (e) => {
-      //   const event = parseMiniTicker(e.data);
-      //   this.price = Number(event.closePrice);
-      //   console.log(`${moment().format('HH:mm:ss.SSS')}: ${this.price}`);
-      //   resolve();
-      // });
-
-      // new CronJob(
-      //   '* * * * * *',
-      //   async () => {
-      //     const response = await binanceRestPublic.get<{ price: string }>('/ticker/price', {
-      //       params: {
-      //         symbol: this.symbol,
-      //       },
-      //     });
-      //
-      //     this.price = Number(response.data.price);
-      //     console.log(`${moment().format('HH:mm:ss.SSS')}: ${this.price}`);
-      //
-      //     resolve();
-      //   },
-      //   null,
-      //   true
-      // );
-
       const ws = new ReconnectingWebSocket('wss://ws.coincap.io/trades/binance', [], { WebSocket });
 
       ws.addEventListener('message', (event: MessageEvent) => {
@@ -71,7 +38,7 @@ export class PriceObserver implements IPriceObserver {
       });
 
       new CronJob(
-        '1 * * * * *',
+        '0 */5 * * * *',
         () => {
           console.log(`${moment().format('HH:mm:ss.SSS')}: ${this.price!}`);
         },

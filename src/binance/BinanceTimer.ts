@@ -1,4 +1,4 @@
-import { binanceRestPublic } from '../binance';
+import { binanceRestPublic } from './binance';
 
 export class BinanceTimer {
   time: number | null;

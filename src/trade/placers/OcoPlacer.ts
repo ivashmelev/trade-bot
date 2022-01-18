@@ -53,7 +53,6 @@ export class OcoPlacer implements IOcoPlacer {
       });
     } catch (error) {
       console.log(new Error('OcoPlacer error from method cancel'));
-      // return await this.cancel(oco);
       throw error;
     }
   }

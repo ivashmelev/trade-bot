@@ -9,7 +9,6 @@ export enum Side {
 
 export enum OrderStatus {
   New = 'NEW',
-  PartiallyFilled = 'PARTIALLY_FILLED',
   Filled = 'FILLED',
   Canceled = 'CANCELED',
   PendingCancel = 'PENDING_CANCEL',
@@ -26,11 +25,6 @@ export enum TimeInForce {
 export enum OrderType {
   TakeProfitLimit = 'TAKE_PROFIT_LIMIT',
   StopLossLimit = 'STOP_LOSS_LIMIT',
-  // Limit = 'LIMIT',
-  // Market = 'MARKET',
-  // StopLoss = 'STOP_LOSS',
-  // TakeProfit = 'TAKE_PROFIT',
-  // LimitMaker = 'LIMIT_MAKER',
 }
 
 type OrderTypeThreshold = Record<OrderType, number>;

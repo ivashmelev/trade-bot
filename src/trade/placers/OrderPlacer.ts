@@ -62,10 +62,8 @@ export class OrderPlacer implements IOrderPlacer {
       await binanceRestPrivate.delete('/order', {
         params: { symbol: this.symbol, orderId: order.orderId },
       });
-      console.log(`cancel ${order.orderId}`);
     } catch (error) {
       console.log(new Error('OrderPlacer error from method cancel'));
-      // return await this.cancel(order);
       throw error;
     }
   }
