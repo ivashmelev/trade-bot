@@ -1,4 +1,4 @@
-import { binanceRestPrivate, binanceRestPublic } from '../../binance';
+import { binance } from '../../binance';
 import { IOrderPlacer } from '../interfaces';
 import {
   Order,
@@ -25,7 +25,7 @@ export class OrderPlacer implements IOrderPlacer {
 
   async place(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
     try {
-      const response = await binanceRestPrivate.post<Order>('/order', null, {
+      const response = await binance.restPrivate.post<Order>('/order', null, {
         params: {
           symbol: this.symbol,
           side,
@@ -44,7 +44,7 @@ export class OrderPlacer implements IOrderPlacer {
       console.log(new Error('OrderPlacer error from method place'));
 
       if (error.response?.data.code === -2010) {
-        const response = await binanceRestPublic.get<{ price: string }>('/ticker/price', {
+        const response = await binance.restPublic.get<{ price: string }>('/ticker/price', {
           params: {
             symbol: this.symbol,
           },
@@ -59,7 +59,7 @@ export class OrderPlacer implements IOrderPlacer {
 
   async cancel(order: Order): Promise<void> {
     try {
-      await binanceRestPrivate.delete('/order', {
+      await binance.restPrivate.delete('/order', {
         params: { symbol: this.symbol, orderId: order.orderId },
       });
     } catch (error) {

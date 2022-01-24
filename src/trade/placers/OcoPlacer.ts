@@ -1,4 +1,4 @@
-import { binanceRestPrivate, binanceRestPublic } from '../../binance';
+import { binance } from '../../binance';
 import { IOcoPlacer } from '../interfaces';
 import { Oco, OcoRequest, OrderResponseError, OrderType, Side, SymbolToken, Threshold, TimeInForce } from '../types';
 import { getPrice } from '../utils';
@@ -15,7 +15,7 @@ export class OcoPlacer implements IOcoPlacer {
 
   async place(side: Side, price: number, quantity: string): Promise<Oco> {
     try {
-      const response = await binanceRestPrivate.post<Oco>('/order/oco', null, {
+      const response = await binance.restPrivate.post<Oco>('/order/oco', null, {
         params: {
           symbol: this.symbol,
           side,
@@ -33,7 +33,7 @@ export class OcoPlacer implements IOcoPlacer {
       console.log(new Error('OcoPlacer error from method place'));
 
       if (error.response?.data.code === -2010) {
-        const response = await binanceRestPublic.get<{ price: string }>('/ticker/price', {
+        const response = await binance.restPublic.get<{ price: string }>('/ticker/price', {
           params: {
             symbol: this.symbol,
           },
@@ -48,7 +48,7 @@ export class OcoPlacer implements IOcoPlacer {
 
   async cancel(oco: Oco): Promise<void> {
     try {
-      await binanceRestPrivate.delete('/orderList', {
+      await binance.restPrivate.delete('/orderList', {
         params: { symbol: this.symbol, orderListId: oco.orderListId },
       });
     } catch (error) {

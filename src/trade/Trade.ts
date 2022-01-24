@@ -7,13 +7,7 @@ import chalk from 'chalk';
 import moment from 'moment';
 import { OrderCanceller, StopLossOrderCleaner, StopLossOrderSaver } from './adapters';
 import { IOrderPlacer } from './interfaces';
-import {
-  binanceRestPrivate,
-  binanceRestPublic,
-  binanceWebsocket,
-  initBinanceRest,
-  initBinanceWebsocket,
-} from '../binance';
+import { binance } from '../binance';
 import { CronJob } from 'cron';
 
 export class Trade {
@@ -57,8 +51,8 @@ export class Trade {
   }
 
   private async initialization() {
-    initBinanceRest();
-    await initBinanceWebsocket();
+    binance.initRest();
+    await binance.initWebsocket();
     await this.priceObserver.startGetPrice();
     await this.stopLossRepository.getStoredOrders();
   }
@@ -130,7 +124,7 @@ export class Trade {
       })();
     };
 
-    binanceWebsocket.addEventListener('message', orderStatusListener);
+    binance.websocket.addEventListener('message', orderStatusListener);
 
     await buyOrSell();
   }
@@ -146,7 +140,7 @@ export class Trade {
             try {
               job.stop();
 
-              binanceWebsocket.addEventListener('message', orderStatusListener);
+              binance.websocket.addEventListener('message', orderStatusListener);
 
               await this.sellStopLossOrderPlacer.place(
                 Side.Sell,
@@ -180,7 +174,7 @@ export class Trade {
           }
           case OrderStatus.Filled: {
             if (payload.orderId === orderId) {
-              binanceWebsocket.removeEventListener('message', orderStatusListener);
+              binance.websocket.removeEventListener('message', orderStatusListener);
               job.start();
               console.log(
                 chalk.bgGreen(
@@ -193,7 +187,7 @@ export class Trade {
           case OrderStatus.Canceled:
           case OrderStatus.Expired: {
             if (payload.orderId === orderId) {
-              binanceWebsocket.removeEventListener('message', orderStatusListener);
+              binance.websocket.removeEventListener('message', orderStatusListener);
               job.start();
               console.log(
                 chalk.bgRed(
@@ -212,7 +206,7 @@ export class Trade {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async cancelOrders(): Promise<any> {
-    const response = await binanceRestPrivate.delete('/openOrders', {
+    const response = await binance.restPrivate.delete('/openOrders', {
       params: { symbol: this.symbol },
     });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -221,14 +215,14 @@ export class Trade {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getOpenOrders(): Promise<any> {
-    const response = await binanceRestPrivate.get('/openOrders', { params: { symbol: this.symbol } });
+    const response = await binance.restPrivate.get('/openOrders', { params: { symbol: this.symbol } });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getExchangeInfo(): Promise<any> {
-    const response = await binanceRestPublic.get('/exchangeInfo', { params: { symbol: this.symbol } });
+    const response = await binance.restPublic.get('/exchangeInfo', { params: { symbol: this.symbol } });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
   }

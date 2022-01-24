@@ -1,4 +1,4 @@
-import { binanceRestPublic } from './binance';
+import { binance } from './Binance';
 
 export class BinanceTimer {
   time: number | null;
@@ -11,7 +11,7 @@ export class BinanceTimer {
   async getServerTime(): Promise<void> {
     try {
       const start = new Date().getTime();
-      const response = await binanceRestPublic.get<{ serverTime: string }>('/time');
+      const response = await binance.restPublic.get<{ serverTime: string }>('/time');
       const serverTime = Number(response.data.serverTime);
       const end = new Date().getTime();
       const diff = new Date().getTime() - serverTime + (end - start) / 2;

@@ -3,7 +3,7 @@ import { IOrderPlacer } from '../interfaces';
 import { OrderPlacer } from '../placers';
 import { StopLossRepository } from '../repositories';
 import { defineWebsocketEvent } from '../utils';
-import { binanceWebsocket } from '../../binance';
+import { binance } from '../../binance';
 
 export class StopLossOrderCleaner implements IOrderPlacer {
   private orderPlacer: IOrderPlacer;
@@ -18,7 +18,7 @@ export class StopLossOrderCleaner implements IOrderPlacer {
 
   async place(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
     this.activeOrder = await this.orderPlacer.place(side, price, quantity, type);
-    binanceWebsocket.addEventListener('message', this.orderStatusListener.bind(this));
+    binance.websocket.addEventListener('message', this.orderStatusListener.bind(this));
     return this.activeOrder;
   }
 
@@ -31,12 +31,12 @@ export class StopLossOrderCleaner implements IOrderPlacer {
     switch (payload.orderStatus) {
       case OrderStatus.Filled: {
         void this.stopLossRepository.clear();
-        binanceWebsocket.removeEventListener('message', this.orderStatusListener.bind(this));
+        binance.websocket.removeEventListener('message', this.orderStatusListener.bind(this));
         break;
       }
       case OrderStatus.Canceled:
       case OrderStatus.Expired: {
-        binanceWebsocket.removeEventListener('message', this.orderStatusListener.bind(this));
+        binance.websocket.removeEventListener('message', this.orderStatusListener.bind(this));
         break;
       }
     }
