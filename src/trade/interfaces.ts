@@ -1,17 +1,13 @@
 import { Oco, Order, OrderType, Side, SymbolToken } from './types';
 
-interface Placer<T> {
+export interface IPlacer<T> {
   place: (side: Side, price: number, quantity: string, type?: OrderType) => Promise<T>;
   cancel: (order: T) => Promise<void>;
 }
 
-export interface IOrderPlacer extends Placer<Order> {
-  place: (side: Side, price: number, quantity: string, type: OrderType) => Promise<Order>;
-}
+export type IOrderPlacer = IPlacer<Order>;
 
-export interface IOcoPlacer extends Placer<Oco> {
-  place: (side: Side, price: number, quantity: string) => Promise<Oco>;
-}
+export type IOcoPlacer = IPlacer<Oco>;
 
 export interface OrderRepository {
   save: (price: string, quantity: string) => Promise<void>;

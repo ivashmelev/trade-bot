@@ -17,7 +17,7 @@ const threshold: Threshold = {
   limit: 0.05,
 };
 
-const bot = new Trade(SymbolToken.Btcusdt, threshold, 100);
+const bot = new Trade(SymbolToken.Btcusdt, threshold, 100000);
 
 app.get('/openOrders', async (req, res) => {
   res.send(await bot.getOpenOrders());
@@ -29,6 +29,10 @@ app.get('/cancelAll', async (req, res) => {
 
 app.get('/exchangeInfo', async (req, res) => {
   res.send(await bot.getExchangeInfo());
+});
+
+app.get('/getAccount', async (req, res) => {
+  res.send(await bot.getAccount());
 });
 
 app.listen(port, async () => {

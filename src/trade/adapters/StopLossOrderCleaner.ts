@@ -16,7 +16,7 @@ export class StopLossOrderCleaner implements IOrderPlacer {
     this.activeOrder = null;
   }
 
-  async place(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
+  async place(side: Side, price: number, quantity: string, type?: OrderType): Promise<Order> {
     this.activeOrder = await this.orderPlacer.place(side, price, quantity, type);
     binance.websocket.addEventListener('message', this.orderStatusListener.bind(this));
     return this.activeOrder;

@@ -172,3 +172,31 @@ export interface OrderResponseError {
   code: number;
   msg: string;
 }
+
+export enum OrderErrorMessage {
+  InsufficientBalance = 'Account has insufficient balance for requested action.',
+  TriggerImmediately = 'Order would trigger immediately.',
+}
+
+export interface AccountInformation {
+  makerCommission: number;
+  takerCommission: number;
+  buyerCommission: number;
+  sellerCommission: number;
+  canTrade: boolean;
+  canWithdraw: boolean;
+  canDeposit: boolean;
+  updateTime: number;
+  accountType: 'SPOT';
+  balances: {
+    asset: string;
+    free: string;
+    locked: string;
+  }[];
+  permissions: ['SPOT'];
+}
+
+export enum BalanceAssets {
+  Usdt = 'USDT',
+  Btc = 'Btc',
+}

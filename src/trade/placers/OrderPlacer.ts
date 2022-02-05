@@ -23,7 +23,7 @@ export class OrderPlacer implements IOrderPlacer {
     this.threshold = threshold;
   }
 
-  async place(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
+  async place(side: Side, price: number, quantity: string, type?: OrderType): Promise<Order> {
     try {
       const response = await binance.restPrivate.post<Order>('/order', null, {
         params: {
@@ -31,8 +31,8 @@ export class OrderPlacer implements IOrderPlacer {
           side,
           type,
           quantity,
-          price: getPrice(this.threshold, side, type, price, false),
-          stopPrice: getPrice(this.threshold, side, type, price, true),
+          price: getPrice(this.threshold, side, type || OrderType.TakeProfitLimit, price, false),
+          stopPrice: getPrice(this.threshold, side, type || OrderType.TakeProfitLimit, price, true),
           newOrderRespType: OrderResponseType.Result,
           timeInForce: TimeInForce.Gtc,
         } as OrderRequest,

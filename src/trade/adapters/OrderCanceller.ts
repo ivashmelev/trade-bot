@@ -21,7 +21,7 @@ export class OrderCanceller implements IOrderPlacer {
     this.job = this.createCancelingJob();
   }
 
-  async place(side: Side, price: number, quantity: string, type: OrderType): Promise<Order> {
+  async place(side: Side, price: number, quantity: string, type?: OrderType): Promise<Order> {
     this.activeOrder = await this.orderPlacer.place(side, price, quantity, type);
     this.stopLossPrice = calcValueByPercentage(price, this.threshold[this.activeOrder.side].STOP_LOSS_LIMIT);
     this.job.start();

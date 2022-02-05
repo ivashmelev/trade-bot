@@ -5,8 +5,8 @@ import { OcoPlacer, OrderPlacer } from './placers';
 import { defineWebsocketEvent } from './utils';
 import chalk from 'chalk';
 import moment from 'moment';
-import { OrderCanceller, StopLossOrderCleaner, StopLossOrderSaver } from './adapters';
-import { IOrderPlacer } from './interfaces';
+import { OrderCanceller, StopLossOrderCleaner, StopLossOrderSaver, HandlerInsufficientBalance } from './adapters';
+import { IOcoPlacer, IOrderPlacer } from './interfaces';
 import { binance } from '../binance';
 import { CronJob } from 'cron';
 
@@ -16,7 +16,7 @@ export class Trade {
   private readonly deposit: number;
   private readonly priceObserver: PriceObserver;
   private readonly stopLossRepository: StopLossRepository;
-  private ocoPlacer: OcoPlacer;
+  private ocoPlacer: IOcoPlacer;
   private sellOrderPlacer: IOrderPlacer;
   private sellStopLossOrderPlacer: IOrderPlacer;
   private side: Side;
@@ -27,7 +27,7 @@ export class Trade {
     this.deposit = deposit;
     this.priceObserver = new PriceObserver(symbol);
     this.stopLossRepository = new StopLossRepository();
-    this.ocoPlacer = new OcoPlacer(symbol, threshold);
+    this.ocoPlacer = new HandlerInsufficientBalance(new OcoPlacer(symbol, threshold), deposit);
 
     this.sellOrderPlacer = new OrderCanceller(
       new StopLossOrderSaver(new OrderPlacer(symbol, threshold), this.stopLossRepository),
@@ -46,8 +46,8 @@ export class Trade {
 
   async trade(): Promise<void> {
     await this.initialization();
-    await this.mainThread();
-    await this.stopLossThread();
+    // await this.mainThread();
+    // await this.stopLossThread();
   }
 
   private async initialization() {
@@ -223,6 +223,12 @@ export class Trade {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getExchangeInfo(): Promise<any> {
     const response = await binance.restPublic.get('/exchangeInfo', { params: { symbol: this.symbol } });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return response.data;
+  }
+
+  async getAccount(): Promise<any> {
+    const response = await binance.restPrivate.get('/account', { params: {} });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
   }
