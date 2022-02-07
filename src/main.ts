@@ -11,7 +11,7 @@ const threshold: Threshold = {
     STOP_LOSS_LIMIT: 0.2,
   },
   SELL: {
-    TAKE_PROFIT_LIMIT: -0.2,
+    TAKE_PROFIT_LIMIT: 0.2,
     STOP_LOSS_LIMIT: -0.2,
   },
   limit: 0.05,

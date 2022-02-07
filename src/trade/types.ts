@@ -29,6 +29,9 @@ export enum OrderType {
 
 type OrderTypeThreshold = Record<OrderType, number>;
 
+/**
+ * TODO вынести в отдельный класс ThresholdController
+ */
 export type Threshold = Record<Side, OrderTypeThreshold> & { limit: number };
 
 export interface Order {
