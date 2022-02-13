@@ -1,8 +1,8 @@
 import { OrderService } from '../OrderService/types';
-import { PriceObserver } from '../../trade/observers';
 import { Oco, Order, Side, Threshold } from '../../trade/types';
 import { CronJob } from 'cron';
 import { calcValueByPercentage } from '../../trade/utils';
+import { PriceObserver } from '../PriceObserver/PriceObserver';
 
 /**
  * Смотрит на цену и при необходимости отменяет ордер
