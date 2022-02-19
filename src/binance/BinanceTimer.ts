@@ -2,6 +2,7 @@ import { binance } from './Binance';
 
 export class BinanceTimer {
   time: number | null;
+  // @ts-ignore
   private timer: NodeJS.Timer;
 
   constructor() {

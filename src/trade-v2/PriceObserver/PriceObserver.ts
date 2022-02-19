@@ -41,7 +41,7 @@ export class PriceObserver {
       };
 
       new CronJob(
-        '* * * * * *', //'0 */5 * * * *',
+        '0 */5 * * * *',
         () => {
           console.log(`${moment().format('HH:mm:ss.SSS')}: ${this.price}`);
         },

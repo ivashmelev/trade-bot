@@ -50,6 +50,9 @@ export class OrderCanceller implements OrderService {
           }
         } else {
           if (this.priceObserver.price <= this.stopLossPrice) {
+            console.log(
+              `currentPrice: ${this.priceObserver.price}, activeOrder: ${this.activeOrder.price}, stopLossPrice: ${this.stopLossPrice}`
+            );
             await this.cancel(this.activeOrder);
           }
         }

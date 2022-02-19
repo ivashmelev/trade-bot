@@ -4,18 +4,20 @@ import { defineWebsocketEvent } from '../../trade/utils';
 import { OrderStatusHandlers } from './types';
 
 export abstract class ExecutionReportEventHandler {
-  private handlers: OrderStatusHandlers;
+  private readonly handlers: OrderStatusHandlers;
 
-  constructor() {
+  protected constructor() {
     this.handlers = {
-      NEW: this.new,
-      FILLED: this.filled,
-      CANCELED: this.canceled,
-      EXPIRED: this.expired,
-      PENDING_CANCEL: this.pendingCancel,
-      REJECTED: this.rejected,
+      NEW: this.new.bind(this),
+      FILLED: this.filled.bind(this),
+      CANCELED: this.canceled.bind(this),
+      EXPIRED: this.expired.bind(this),
+      PENDING_CANCEL: this.pendingCancel.bind(this),
+      REJECTED: this.rejected.bind(this),
     };
+  }
 
+  launch() {
     this.startListening();
   }
 
@@ -32,11 +34,11 @@ export abstract class ExecutionReportEventHandler {
   protected rejected(payload: ExecutionReportEvent) {}
 
   protected startListening() {
-    binance.websocket.addEventListener('message', this.orderStatusListener(this.handlers));
+    binance.websocket.addEventListener('message', this.orderStatusListener(this.handlers).bind(this));
   }
 
   protected stopListening() {
-    binance.websocket.removeEventListener('message', this.orderStatusListener(this.handlers));
+    binance.websocket.removeEventListener('message', this.orderStatusListener(this.handlers).bind(this));
   }
 
   private orderStatusListener(handlers: OrderStatusHandlers) {

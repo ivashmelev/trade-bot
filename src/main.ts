@@ -38,7 +38,7 @@ app.get('/getAccount', async (req, res) => {
 app.listen(port, async () => {
   try {
     console.log('Bot is running!');
-    await bot.trade();
+    // await bot.trade();
   } catch (error) {
     console.log(error);
     throw error;

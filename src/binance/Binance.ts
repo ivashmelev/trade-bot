@@ -9,8 +9,11 @@ import { BinanceTimer } from './BinanceTimer';
 import { delay } from '../trade/utils';
 
 export class Binance {
+  // @ts-ignore
   restPrivate: AxiosInstance;
+  // @ts-ignore
   restPublic: AxiosInstance;
+  // @ts-ignore
   websocket: ReconnectingWebSocket;
   baseUrl: string;
   timer: BinanceTimer;
