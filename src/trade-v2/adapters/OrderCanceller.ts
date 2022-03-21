@@ -32,6 +32,7 @@ export class OrderCanceller implements OrderService {
   }
 
   async cancel(order: Order | Oco): Promise<void> {
+    console.log('OrderCanceller', 'call');
     this.job.stop();
     const result = await this.orderService.cancel(order);
     this.activeOrder = null;

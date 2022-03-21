@@ -9,19 +9,21 @@ import { StopLossOrderRepository } from './OrderRepository/StopLossOrderReposito
 import { OrderCanceller } from './adapters/OrderCanceller';
 import { StopLossOrderRepositoryCleaner } from './adapters/StopLossOrderRepositoryCleaner';
 import { binance } from '../binance';
-import { BuyOrSellReportHandler } from './ExecutionReportEventHandler/BuyOrSellReportHandler';
+import { BuyOrSellStrategy } from './TradeStrategies/BuyOrSellStrategy';
+import { StopLossSellStrategy } from './TradeStrategies/StopLossSellStrategy';
 
 export class Trade {
   private readonly priceObserver: PriceObserver;
   private readonly buyOrderService: OrderService;
   private readonly sellOrderService: OrderService;
-  private stopLossSellOrder: OrderService;
+  private readonly stopLossSellOrder: OrderService;
   private readonly side: Side;
   private readonly deposit: number;
-  private symbol: SymbolToken;
+  private readonly symbol: SymbolToken;
   private threshold: Threshold;
   private readonly stopLossOrderRepository: StopLossOrderRepository;
-  private buyOrSellReportHandler: BuyOrSellReportHandler;
+  private buyOrSellStrategy: BuyOrSellStrategy;
+  private stopLossSellStrategy: StopLossSellStrategy;
 
   constructor(symbol: SymbolToken, threshold: Threshold, deposit: number) {
     this.symbol = symbol;
@@ -52,18 +54,25 @@ export class Trade {
       symbol
     );
 
-    this.buyOrSellReportHandler = new BuyOrSellReportHandler(
+    this.buyOrSellStrategy = new BuyOrSellStrategy(
       this.buyOrderService,
       this.sellOrderService,
       this.side,
       this.priceObserver,
       this.deposit
     );
+
+    this.stopLossSellStrategy = new StopLossSellStrategy(
+      this.stopLossSellOrder,
+      this.priceObserver,
+      this.stopLossOrderRepository
+    );
   }
 
   async launch() {
     await this.initialization();
-    await this.buyOrSellReportHandler.launch();
+    await this.buyOrSellStrategy.launch();
+    await this.stopLossSellStrategy.launch();
   }
 
   private async initialization() {

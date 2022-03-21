@@ -19,9 +19,9 @@ export class StopLossOrderRepositorySaver implements OrderService {
   }
 
   async cancel(order: Order | Oco): Promise<void> {
+    console.log('StopLossOrderRepositorySaver', 'call');
     await this.orderService.cancel(order);
 
-    console.log('cancel', order);
     if ('side' in order) {
       if (order.side === Side.Sell) {
         await this.stopLossOrderRepository.save(order.price, order.origQty);

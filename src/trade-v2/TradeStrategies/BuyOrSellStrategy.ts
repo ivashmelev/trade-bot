@@ -1,11 +1,12 @@
-import { ExecutionReportEventHandler } from './abstract';
+import { TradeStrategies } from './abstract';
 import { ExecutionReportEvent, Side } from '../../trade/types';
 import chalk from 'chalk';
 import moment from 'moment';
 import { OrderService } from '../OrderService/types';
 import { PriceObserver } from '../PriceObserver/PriceObserver';
+import { precision } from '../../utils/precision';
 
-export class BuyOrSellReportHandler extends ExecutionReportEventHandler {
+export class BuyOrSellStrategy extends TradeStrategies {
   private activeOrderId: number | null;
   private buyOrderService: OrderService;
   private sellOrderService: OrderService;
@@ -75,27 +76,15 @@ export class BuyOrSellReportHandler extends ExecutionReportEventHandler {
 
   private async buyOrSell() {
     if (this.priceObserver.price) {
-      const getQuantity = (price: number) => {
-        const indexDot = 2;
-        const possiblePrecision = 6;
-        const quantity = this.deposit / price;
-        const quantityArr = Array.from(String(quantity));
-        const indexGreaterNull = quantityArr.findIndex((value) => Number(value) > 0);
+      const quantity = precision(this.deposit / this.priceObserver.price);
 
-        return Number(quantity.toPrecision(possiblePrecision - (indexGreaterNull - indexDot)));
-      };
-
-      if (this.priceObserver.price) {
-        const quantity = getQuantity(this.priceObserver.price);
-
-        if (this.side === Side.Buy) {
-          await this.buyOrderService.place(Side.Buy, this.priceObserver.price, quantity);
-        } else if (this.side === Side.Sell) {
-          await this.sellOrderService.place(Side.Sell, this.priceObserver.price, quantity);
-        }
-
-        this.side = this.side === Side.Buy ? Side.Sell : Side.Buy;
+      if (this.side === Side.Buy) {
+        await this.buyOrderService.place(Side.Buy, this.priceObserver.price, quantity);
+      } else if (this.side === Side.Sell) {
+        await this.sellOrderService.place(Side.Sell, this.priceObserver.price, quantity);
       }
+
+      this.side = this.side === Side.Buy ? Side.Sell : Side.Buy;
     }
   }
 }

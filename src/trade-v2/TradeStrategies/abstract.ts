@@ -3,7 +3,7 @@ import { ExecutionReportEvent } from '../../trade/types';
 import { defineWebsocketEvent } from '../../trade/utils';
 import { OrderStatusHandlers } from './types';
 
-export abstract class ExecutionReportEventHandler {
+export abstract class TradeStrategies {
   private readonly handlers: OrderStatusHandlers;
 
   protected constructor() {
